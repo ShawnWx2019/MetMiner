@@ -1,0 +1,5 @@
+sample_id,group,class,injection.order,batch
+QC_01,QC,QC,1,1
+QC_02,QC,QC,2,1
+QC_03,QC,QC,3,1
+QC_04,QC,QC,4,1

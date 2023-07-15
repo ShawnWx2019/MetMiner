@@ -115,7 +115,7 @@ library(tidymass)
 if (TEST == "TRUE") {
   T.MS1 = "~/tmp/hpctest/presudo/MS1";
   T.MS2 = "~/tmp/hpctest/presudo/MS2";
-  sample_info = "~/tmp/hpctest/presudo/sample_info.xlsx"
+  T.sample_info = "~/tmp/hpctest/presudo/sample_info.xlsx"
   T.ppm = 10;
   T.threads = 8;
   T.show_output = FALSE;
@@ -130,7 +130,7 @@ if (TEST == "TRUE") {
   T.MS1 = args$MS1;
   T.MS2 = args$MS2;
   T.ppm = args$ppm;
-  sample_info = args$sample_info;
+  T.sample_info = args$sample_info;
   T.threads = args$threads;
   T.show_output = args$show_output;
   T.p_min = args$p_min;
@@ -248,55 +248,55 @@ peak_distribution <- function(object) {
     theme1
   return(plt_peak_dis)
 }
-extract_fragment <- function(ms2_data,vari_id,spec_id) {
-  var2spec = data.frame(
-    variable_id = vari_id,
-    ms2_spectrum_id = spec_id
-  )
-  out = map2_dfr(.x = spec_id,.y = ms2_data,.f = function(.x,.y) {
-    MS2_df <-
-      .y %>% 
-      as.data.frame() %>% 
-      mutate(
-        ms2_spectrum_id = .x
-      ) %>% 
-      relocate(ms2_spectrum_id,.before = mz)
-  })
-  mrm_out <- 
-  out %>% 
-    left_join(var2spec,by = 'ms2_spectrum_id') %>%
-    relocate(variable_id,.before = ms2_spectrum_id) %>% 
-    mutate(precursor = str_extract(ms2_spectrum_id,"(?<=mz).*(?=rt)") %>% as.numeric()) %>% 
-    group_by(variable_id) %>% 
-    arrange(variable_id,desc(intensity)) %>% 
-    mutate(fragment.order = 1:length(variable_id),
-           gap = precursor - mz) %>% 
-    filter(gap > 15) %>% 
-    slice_head(n = 1) %>% 
-    rename('product' = "mz") %>% 
-    select(variable_id,ms2_spectrum_id,precursor,product)
-  return(mrm_out)
-}
-oneStepMRMselection <- function(obj_ms2){
-  x = extract_ms2_data(obj_ms2)
-  x = x %>% setNames("MS2")
-  ms2_data <- x$MS2@ms2_spectra
-  vari_id <- x$MS2@variable_id
-  spec_id <- x$MS2@ms2_spectrum_id
-  res_mrm <- extract_fragment(ms2_data = ms2_data,vari_id = vari_id,spec_id = spec_id)
-  
-  ms2_tag <- data.frame(
-    variable_id = vari_id,
-    MS2_info = "yes"
-  )
-  object_new <- 
-    obj_ms2 %>% activate_mass_dataset('variable_info') %>%
-    left_join(ms2_tag,by = 'variable_id') %>% 
-    filter(MS2_info == 'yes') %>% 
-    left_join(res_mrm,by = 'variable_id') %>% 
-    drop_na()
-  return(object_new)
-  }
+# extract_fragment <- function(ms2_data,vari_id,spec_id) {
+#   var2spec = data.frame(
+#     variable_id = vari_id,
+#     ms2_spectrum_id = spec_id
+#   )
+#   out = map2_dfr(.x = spec_id,.y = ms2_data,.f = function(.x,.y) {
+#     MS2_df <-
+#       .y %>% 
+#       as.data.frame() %>% 
+#       mutate(
+#         ms2_spectrum_id = .x
+#       ) %>% 
+#       relocate(ms2_spectrum_id,.before = mz)
+#   })
+#   mrm_out <- 
+#   out %>% 
+#     left_join(var2spec,by = 'ms2_spectrum_id') %>%
+#     relocate(variable_id,.before = ms2_spectrum_id) %>% 
+#     mutate(precursor = str_extract(ms2_spectrum_id,"(?<=mz).*(?=rt)") %>% as.numeric()) %>% 
+#     group_by(variable_id) %>% 
+#     arrange(variable_id,desc(intensity)) %>% 
+#     mutate(fragment.order = 1:length(variable_id),
+#            gap = precursor - mz) %>% 
+#     filter(gap > 15) %>% 
+#     slice_head(n = 1) %>% 
+#     rename('product' = "mz") %>% 
+#     select(variable_id,ms2_spectrum_id,precursor,product)
+#   return(mrm_out)
+# }
+# oneStepMRMselection <- function(obj_ms2){
+#   x = extract_ms2_data(obj_ms2)
+#   x = x %>% setNames("MS2")
+#   ms2_data <- x$MS2@ms2_spectra
+#   vari_id <- x$MS2@variable_id
+#   spec_id <- x$MS2@ms2_spectrum_id
+#   res_mrm <- extract_fragment(ms2_data = ms2_data,vari_id = vari_id,spec_id = spec_id)
+#   
+#   ms2_tag <- data.frame(
+#     variable_id = vari_id,
+#     MS2_info = "yes"
+#   )
+#   object_new <- 
+#     obj_ms2 %>% activate_mass_dataset('variable_info') %>%
+#     left_join(ms2_tag,by = 'variable_id') %>% 
+#     filter(MS2_info == 'yes') %>% 
+#     left_join(res_mrm,by = 'variable_id') %>% 
+#     drop_na()
+#   return(object_new)
+#   }
 ##> working dir
 dir.create("workdir",showWarnings = F,recursive = T)
 # 1.0 positive model ----------------------------------------------------------
@@ -306,7 +306,7 @@ load(paste0(ms1.pos,"Result/object"))
 
 object.pos <- object
 ##> load sample_info
-sample_info <- import(sample_info)
+sample_info <- import(T.sample_info)
 object.pos <-
   object.pos %>% 
   activate_mass_dataset('sample_info') %>% 
@@ -476,10 +476,7 @@ object_pos_MRM <-
 
 ##> load database 
 ##> MS2
-db_file_path = dir("~/.HPC_tidymass/MS_db/MS_db/",pattern = "*.rda")
-purrr::map(.x = db_file_path,.f = function(.x){
-  load(paste0("~/.HPC_tidymass/MS_db/MS_db/",.x))
-})
+
 load("~/.HPC_tidymass/MS_db/MS_db/snyder_database_hilic0.0.3.rda")
 load("~/.HPC_tidymass/MS_db/MS_db/mona_database0.0.3.rda")
 load("~/.HPC_tidymass/MS_db/MS_db/hmdb_database0.0.3.rda")

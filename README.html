@@ -422,8 +422,42 @@ to generate a TQMS (Triple Quadrupole Mass Spectrometry) method.</p>
 instructions provided in the software’s manual for step-by-step
 analysis. If using TidyMass, it is advised to refer to the tutorial
 available at <a href="https://www.tidymass.org/start/" class="uri">https://www.tidymass.org/start/</a> and follow the provided
-guidelines. Alternatively, you can also execute the test scripts
+guidelines. Alternatively, you can also execute the <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/PresMetaboUpAnalysis.R">PresMetaboUpAnalysis.R</a>
 provided by the pipeline.</p>
+<ol style="list-style-type: decimal">
+<li><p>Convert .raw data to .mzXML and .mgf by <a href="https://proteowizard.sourceforge.io/download.html">MSCovert</a></p></li>
+<li><p>repare your files according to the file storage locations shown
+in the diagram below.</p></li>
+</ol>
+<div class="float">
+<img src="%22https://github.com/ShawnWx2019/MetMiner/blob/main/04.www/filetree.png%22" alt="file structure" />
+<div class="figcaption">file structure</div>
+</div>
+<ol start="3" style="list-style-type: decimal">
+<li><p>run <code>PreMetaboUpAnalysis.R</code> under terminal or in
+Rstudio.</p>
+<p>3.1 Note that you should add or remove database according to your own
+needs, starting from line 480 of the script. Also, make sure to modify
+the location where the database file is stored.</p>
+<p>3.2 The column name for ‘sample information’ must be consistent with
+that in the <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoData/sample_info.csv">sample_info.csv</a>.
+You can add more columns, such as ‘treat’, ‘tissue’, ‘day’, and so
+on.</p>
+<p>3.3 Steps of MRM selection. See MDAtoolkits::extract_fragment, a).
+order fragment by intensity of each feature. b). Add tags to fragments
+which have mz gap with precursor ions larger than 15. c). pick the first
+tagged fragment as product ion.</p></li>
+</ol>
+<pre class="bash"><code># run Rscript ../01.Src/PreMetaboUpAnalysis.R -h check the explanation of each parameters
+Rscript ../01.Src/PreMetaboUpAnalysis.R \
+        -x 02.DemoData/MS1 \ ## MS1 .mzXML file
+        -y 02.DemoData/MS2 \ ## MS2 .mgf file
+        -z 02.DemoData/sample_info.csv \ ## sample information
+        -c &#39;rp&#39; \ 
+        -m 5 \
+        -t 6 \
+        -o T
+        -g &quot;QC&quot;</code></pre>
 </div>
 <div id="reference" class="section level2">
 <h2>Reference</h2>

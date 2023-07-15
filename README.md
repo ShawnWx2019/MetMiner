@@ -59,7 +59,37 @@ Here we refer to the process of obtaining the metabolomics data from LC-MS raw d
 
 For pseudotargeted metabolomics, in the initial stage, HPLC experiments can be conducted using 5-10 QC (quality control) samples. Since the data volume is relatively small, and considering the completeness of commercial software databases, we recommend utilizing dedicated analysis software for peak detection and library searching. Alternatively, you can also opt to perform upstream analysis directly with TidyMass, followed by MRM (Multiple Reaction Monitoring) selection to generate a TQMS (Triple Quadrupole Mass Spectrometry) method.
 
-If using commercial software, it is recommended to follow the instructions provided in the software's manual for step-by-step analysis. If using TidyMass, it is advised to refer to the tutorial available at https://www.tidymass.org/start/ and follow the provided guidelines. Alternatively, you can also execute the test scripts provided by the pipeline.
+If using commercial software, it is recommended to follow the instructions provided in the software's manual for step-by-step analysis. If using TidyMass, it is advised to refer to the tutorial available at https://www.tidymass.org/start/ and follow the provided guidelines. Alternatively, you can also execute the [PresMetaboUpAnalysis.R](https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/PresMetaboUpAnalysis.R) provided by the pipeline.
+
+1. Convert .raw data to .mzXML and .mgf by [MSCovert](https://proteowizard.sourceforge.io/download.html)
+
+2. repare your files according to the file storage locations shown in the diagram below.
+
+![file structure]("https://github.com/ShawnWx2019/MetMiner/blob/main/04.www/filetree.png")
+
+3. run `PreMetaboUpAnalysis.R` under terminal or in Rstudio.
+
+    3.1 Note that you should add or remove database according to your own needs, starting from line 480 of the script. Also, make sure to modify the location where the database file is stored.
+    
+    3.2 The column name for 'sample information' must be consistent with that in the [sample_info.csv](https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoData/sample_info.csv). You can add more columns, such as 'treat', 'tissue', 'day', and so on.
+    
+    3.3 Steps of MRM selection. See MDAtoolkits::extract_fragment, a). order fragment by intensity of each feature. b). Add tags to fragments which have mz gap with precursor ions larger than 15. c). pick the first tagged fragment as product ion. 
+    
+  
+
+```bash
+# run Rscript ../01.Src/PreMetaboUpAnalysis.R -h check the explanation of each parameters
+Rscript ../01.Src/PreMetaboUpAnalysis.R \
+        -x 02.DemoData/MS1 \ ## MS1 .mzXML file
+        -y 02.DemoData/MS2 \ ## MS2 .mgf file
+        -z 02.DemoData/sample_info.csv \ ## sample information
+        -c 'rp' \ 
+        -m 5 \
+        -t 6 \
+        -o T
+        -g "QC"
+```
+
 
 
 
