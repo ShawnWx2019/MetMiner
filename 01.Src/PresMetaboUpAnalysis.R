@@ -248,55 +248,7 @@ peak_distribution <- function(object) {
     theme1
   return(plt_peak_dis)
 }
-# extract_fragment <- function(ms2_data,vari_id,spec_id) {
-#   var2spec = data.frame(
-#     variable_id = vari_id,
-#     ms2_spectrum_id = spec_id
-#   )
-#   out = map2_dfr(.x = spec_id,.y = ms2_data,.f = function(.x,.y) {
-#     MS2_df <-
-#       .y %>% 
-#       as.data.frame() %>% 
-#       mutate(
-#         ms2_spectrum_id = .x
-#       ) %>% 
-#       relocate(ms2_spectrum_id,.before = mz)
-#   })
-#   mrm_out <- 
-#   out %>% 
-#     left_join(var2spec,by = 'ms2_spectrum_id') %>%
-#     relocate(variable_id,.before = ms2_spectrum_id) %>% 
-#     mutate(precursor = str_extract(ms2_spectrum_id,"(?<=mz).*(?=rt)") %>% as.numeric()) %>% 
-#     group_by(variable_id) %>% 
-#     arrange(variable_id,desc(intensity)) %>% 
-#     mutate(fragment.order = 1:length(variable_id),
-#            gap = precursor - mz) %>% 
-#     filter(gap > 15) %>% 
-#     slice_head(n = 1) %>% 
-#     rename('product' = "mz") %>% 
-#     select(variable_id,ms2_spectrum_id,precursor,product)
-#   return(mrm_out)
-# }
-# oneStepMRMselection <- function(obj_ms2){
-#   x = extract_ms2_data(obj_ms2)
-#   x = x %>% setNames("MS2")
-#   ms2_data <- x$MS2@ms2_spectra
-#   vari_id <- x$MS2@variable_id
-#   spec_id <- x$MS2@ms2_spectrum_id
-#   res_mrm <- extract_fragment(ms2_data = ms2_data,vari_id = vari_id,spec_id = spec_id)
-#   
-#   ms2_tag <- data.frame(
-#     variable_id = vari_id,
-#     MS2_info = "yes"
-#   )
-#   object_new <- 
-#     obj_ms2 %>% activate_mass_dataset('variable_info') %>%
-#     left_join(ms2_tag,by = 'variable_id') %>% 
-#     filter(MS2_info == 'yes') %>% 
-#     left_join(res_mrm,by = 'variable_id') %>% 
-#     drop_na()
-#   return(object_new)
-#   }
+
 ##> working dir
 dir.create("workdir",showWarnings = F,recursive = T)
 # 1.0 positive model ----------------------------------------------------------
@@ -477,14 +429,15 @@ object_pos_MRM <-
 ##> load database 
 ##> MS2
 
-load("~/.HPC_tidymass/MS_db/MS_db/snyder_database_hilic0.0.3.rda")
-load("~/.HPC_tidymass/MS_db/MS_db/mona_database0.0.3.rda")
-load("~/.HPC_tidymass/MS_db/MS_db/hmdb_database0.0.3.rda")
-load("~/.HPC_tidymass/MS_db/MS_db/massbank_database0.0.3.rda")
-load("~/.HPC_tidymass/MS_db/MS_db/RIKEN_PlaSMA_database0.0.1.rda")
-load("~/.HPC_tidymass/MS_db/MS_db/plantcyc_ms1_database0.0.2.rda")
-load("~/.HPC_tidymass/MS_db/MS_db/KNApSAcK_ms1_database.rda")
-load("~/.HPC_tidymass/MS_db/MS_db/kegg_ms1_database0.0.3.rda")
+
+load("~/.HPC_tidymass/MS_db/mona_database0.0.3.rda")
+load("~/.HPC_tidymass/MS_db/hmdb_database0.0.3.rda")
+load("~/.HPC_tidymass/MS_db/massbank_database0.0.3.rda")
+load("~/.HPC_tidymass/MS_db/RIKEN_PlaSMA_database0.0.1.rda")
+load("~/.HPC_tidymass/MS_db/plantcyc_ms1_database0.0.2.rda")
+load("~/.HPC_tidymass/MS_db/knapsack_ath_db.rda")
+load("~/.HPC_tidymass/MS_db/kegg_ms1_database0.0.3.rda")
+load("~/.HPC_tidymass/MS_db/RPLC.database.rda")
 
 object_pos_anno <-
   annotate_metabolites_mass_dataset(
@@ -515,7 +468,7 @@ object_pos_anno <-
     ms1.match.ppm = 15,
     column = T.column,
     threads = 5,
-    database = KNApSAcK_ms1_database0.0.1,
+    database = knapsack_ath_db,
     candidate.num = 2
   )
 # for ms2
@@ -564,16 +517,6 @@ object_pos_anno <-
     candidate.num = 2
   )
 
-object_pos_anno <-
-  annotate_metabolites_mass_dataset(
-    object = object_pos_anno,
-    polarity = 'positive',
-    ms1.match.ppm = 15,
-    column = T.column,
-    threads = T.threads,
-    database = fiehn_hilic_database0.0.3,
-    candidate.num = 2
-  )
 
 object_pos_anno <-
   annotate_metabolites_mass_dataset(
@@ -587,3 +530,367 @@ object_pos_anno <-
   )
 
 save(object_pos_anno,file = "object_pos_anno.rds")
+
+anno_tmp <- 
+object_pos_anno %>% extract_annotation_table()
+
+
+# neg ---------------------------------------------------------------------
+
+load(paste0(ms1.neg,"Result/object"))
+
+object.neg <- object
+##> load sample_info
+sample_info <- import(T.sample_info)
+object.neg <-
+  object.neg %>% 
+  activate_mass_dataset('sample_info') %>% 
+  select(sample_id) %>% left_join(sample_info)
+
+
+save(object.neg,file = "workdir/01.raw/object.neg")
+
+##> batch detection
+batch_detect_plt.neg <- 
+  batch_detect(object = object.neg)
+
+ggsave(filename = "workdir/01.raw/raw_peak_boxplot.neg.png",plot = batch_detect_plt.neg,width = 10,height = 5)
+ggsave(filename = "workdir/01.raw/raw_peak_boxplot.neg.pdf",plot = batch_detect_plt.neg,width = 10,height = 5)
+
+##> peak distribution
+
+peak_distribution_plt.neg <-
+  peak_distribution(object = object.neg)
+ggsave(filename = "workdir/01.raw/peak_distribution_plt.neg.png",plot = peak_distribution_plt.neg,width = 10,height = 5)
+ggsave(filename = "workdir/01.raw/peak_distribution_plt.neg.pdf",plot = peak_distribution_plt.neg,width = 10,height = 5)
+
+##> missing value
+plt_mv_raw.neg<-
+  show_sample_missing_values(object = object.neg, percentage = TRUE,color_by = 'group',order_by = 'injection.order')+theme1+
+  geom_hline(yintercept = 80,color = "red",linetype="dashed")+
+  ylim(c(0,100))+
+  scale_size_continuous(range = c(0.1, 2)) +
+  ggsci::scale_color_aaas()+
+  theme(axis.text.x = element_text(size = 3))
+
+ggsave(filename = "workdir/01.raw/missing_value_distribution.neg.png",plot = plt_mv_raw.neg,width = 10,height = 5)
+ggsave(filename = "workdir/01.raw/missing_value_distribution.neg.pdf",plot = plt_mv_raw.neg,width = 10,height = 5)
+
+# 1.2 Outlier detect and remove outliers ----------------------------------
+
+qc_id = object.neg %>%
+  activate_mass_dataset(what = "sample_info") %>%
+  filter(class == "QC") %>%
+  pull(sample_id)
+
+object.neg <-
+  object.neg %>%
+  mutate_variable_na_freq(according_to_samples = qc_id)
+##> na frequence is less than 0.2 in qc samples.
+object.neg.mv <-
+  object.neg %>%
+  activate_mass_dataset(what = "variable_info") %>%
+  filter(na_freq < 0.2)
+
+
+save(object.neg.mv,file = "workdir/02.remove_noise/object.neg.mv")
+
+plt_mv_remove_noise.neg<-
+  show_sample_missing_values(object = object.neg.mv, percentage = TRUE,color_by = 'group',order_by = 'injection.order')+theme1+
+  geom_hline(yintercept = 80,color = "red",linetype="dashed")+
+  ylim(c(0,100))+
+  theme(axis.text.x = element_text(size = 8,angle = 90)) +
+  scale_size_continuous(range = c(0.1, 2)) +
+  ggsci::scale_color_aaas()+
+  theme(axis.text.x = element_text(size = 3))
+
+ggsave(filename = "workdir/02.remove_noise/plt_mv_remove_noise.neg.png",plot = plt_mv_remove_noise.neg,width = 10,height = 5)
+ggsave(filename = "workdir/02.remove_noise/plt_mv_remove_noise.neg.pdf",plot = plt_mv_remove_noise.neg,width = 10,height = 5)
+
+outlier_samples.neg <-
+  object.neg.mv %>% 
+  `+`(1) %>% 
+  log(2) %>% 
+  scale() %>% 
+  detect_outlier(na_percentage_cutoff = 0.8)
+
+outlier_table.neg <-
+  extract_outlier_table(outlier_samples.neg)
+
+out_name.neg <-
+  outlier_table.neg %>%
+  filter(according_to_na == TRUE) %>% 
+  rownames()
+
+##> remove outlier based on 
+if(length(out_name.neg) != 0) {
+  object.neg.mv <- 
+    object.neg.mv %>% 
+    activate_mass_dataset('expression_data') %>% 
+    select(-all_of(out_name.neg))
+}
+
+plt_mv_remove_outlier.neg<-
+  show_sample_missing_values(object = object.neg.mv, percentage = TRUE,color_by = 'group',order_by = 'injection.order')+theme1+
+  geom_hline(yintercept = 80,color = "red",linetype="dashed")+
+  ylim(c(0,100))+
+  theme(axis.text.x = element_text(size = 8,angle = 90)) +
+  scale_size_continuous(range = c(0.1, 2)) +
+  ggsci::scale_color_aaas()+
+  theme(axis.text.x = element_text(size = 3))
+
+ggsave(filename = "workdir/02.remove_noise/plt_mv_remove_outlier.neg.png",plot = plt_mv_remove_outlier.neg,width = 10,height = 5)
+ggsave(filename = "workdir/02.remove_noise/plt_mv_remove_outlier.neg.pdf",plot = plt_mv_remove_outlier.neg,width = 10,height = 5)
+
+
+# impute mv ---------------------------------------------------------------
+object.neg.impute =
+  object.neg.mv %>%
+  impute_mv(method = 'knn')
+save(object.neg.impute,file = "workdir/03.impute_mv/object.neg.impute")
+
+
+# normalization -----------------------------------------------------------
+
+object_inte_neg <-
+  integrate_data(object.neg.impute,'qc_mean')
+save(object_inte_neg,file = "workdir/04.normalization/object_inte_neg")
+
+
+# rsd ---------------------------------------------------------------------
+
+rsd <- 
+  object_inte_neg %>% 
+  activate_mass_dataset("sample_info") %>%
+  dplyr::filter(class == T.QC_tag) %>%
+  extract_expression_data() %>%
+  rownames_to_column("ID") %>%
+  pivot_longer(contains(T.QC_tag),names_to = "tag",values_to = "value") %>%
+  select(-tag) %>%
+  group_by(ID) %>%
+  summarise(
+    raw.rsd = (sd(value,na.rm = T)/mean(value,na.rm = T))*100
+  ) %>% arrange(raw.rsd) %>% 
+  mutate(
+    check = case_when(
+      raw.rsd > 30 ~ "Failed",
+      TRUE ~ "PASS"
+    )
+  )
+
+rsd_check <- 
+  rsd %>% 
+  group_by(check) %>% 
+  summarise(num = n())
+
+writexl::write_xlsx(x = list(
+  rsd_val = rsd,
+  rsd_summary = rsd_check
+),"workdir/04.normalization/feature_rsd.neg.xlsx")
+
+
+# add MS2 -----------------------------------------------------------------
+#> add ms2 info
+object_neg.ms2 <-
+  object_inte_neg %>%
+  mutate_ms2(
+    object = .,
+    column = T.column,
+    polarity = 'negative',
+    ms1.ms2.match.mz.tol = 15,
+    ms1.ms2.match.rt.tol = 30,
+    path = ms2.neg
+  )
+#> extract features with ms2
+object_neg_MRM <- 
+  oneStepMRMselection(obj_ms2 = object_neg.ms2)
+
+# feature annotation ------------------------------------------------------
+
+##> load database 
+##> MS2
+
+object_neg_anno <-
+  annotate_metabolites_mass_dataset(
+    object = object_neg_MRM,
+    polarity = 'negative',
+    ms1.match.ppm = 15,
+    column = T.column,
+    threads = 5,
+    database = kegg_ms1_database0.0.3,
+    candidate.num = 2
+  )
+
+object_neg_anno <-
+  annotate_metabolites_mass_dataset(
+    object = object_neg_anno,
+    polarity = 'negative',
+    ms1.match.ppm = 15,
+    column = T.column,
+    threads = 5,
+    database = plantcyc_ms1_database0.0.2,
+    candidate.num = 2
+  )
+
+object_neg_anno <-
+  annotate_metabolites_mass_dataset(
+    object = object_neg_anno,
+    polarity = 'negative',
+    ms1.match.ppm = 15,
+    column = T.column,
+    threads = 5,
+    database = KNApSAcK_ms1_database0.0.1,
+    candidate.num = 2
+  )
+# for ms2
+
+object_neg_anno <-
+  annotate_metabolites_mass_dataset(
+    object = object_neg_anno,
+    polarity = 'negative',
+    ms1.match.ppm = 15,
+    column = T.column,
+    threads = T.threads,
+    database = snyder_database_rplc0.0.3,
+    candidate.num = 2
+  )
+
+object_neg_anno <-
+  annotate_metabolites_mass_dataset(
+    object = object_neg_anno,
+    polarity = 'negative',
+    ms1.match.ppm = 15,
+    column = T.column,
+    threads = T.threads,
+    database = mona_database0.0.3,
+    candidate.num = 2
+  )
+
+object_neg_anno <-
+  annotate_metabolites_mass_dataset(
+    object = object_neg_anno,
+    polarity = 'negative',
+    ms1.match.ppm = 15,
+    column = T.column,
+    threads = T.threads,
+    database = massbank_database0.0.3,
+    candidate.num = 2
+  )
+
+object_neg_anno <-
+  annotate_metabolites_mass_dataset(
+    object = object_neg_anno,
+    polarity = 'negative',
+    ms1.match.ppm = 15,
+    column = T.column,
+    threads = T.threads,
+    database = hmdb_database0.0.3,
+    candidate.num = 2
+  )
+
+
+object_neg_anno <-
+  annotate_metabolites_mass_dataset(
+    object = object_neg_anno,
+    polarity = 'negative',
+    ms1.match.ppm = 15,
+    column = T.column,
+    threads = T.threads,
+    database = RIKEN_PlaSMA_database0.0.1,
+    candidate.num = 2
+  )
+
+save(object_neg_anno,file = "object_neg_anno.rds")
+
+
+
+# merge object ------------------------------------------------------------
+
+dir.create("workdir/05.Annotation/",recursive = T,showWarnings = F)
+load("~/.HPC_tidymass/MS_db/labID2INCHIKEY.rda")
+object_merge_original <- 
+  merge_mass_dataset(
+    x = object_neg_anno,
+    y = object_pos_anno,
+    sample_direction = "inner",
+    variable_direction = 'full',
+    sample_by = 'sample_id',
+    variable_by = c("variable_id","mz","rt","ms2_spectrum_id","precursor","product")
+  ) %>% 
+  activate_mass_dataset("sample_info") 
+
+
+ori_vari_info <-
+  object_merge_original %>% 
+  extract_variable_info() %>% 
+  select(variable_id,mz,rt,Compound.name,Lab.ID,ms2_spectrum_id,precursor,product,Adduct,mz.error,Total.score,Level) %>% 
+  distinct() %>% 
+  filter(Adduct == "(M-H)-" |
+           Adduct == "(M-H2O-H)-"|
+           Adduct == "(M+NH4-2H)-"|
+           Adduct == "(2M-H)-"|
+           Adduct == "(M+F)-" |
+           Adduct == "(M+H)+" |
+           Adduct == "(2M+H)+"|
+           Adduct == "(M+H-H2O)+"|
+           Adduct == "(M+NH4)+"|
+           Adduct == "(M+H-2H2O)+" |
+           Adduct == "(M+H-2H2O)+"|
+           Adduct == "(2M+NH4)+"
+  ) %>% 
+  mutate(Adduct.judge = case_when(
+    Adduct == "(M+H)+" ~ 1,
+    Adduct == "(M-H)-" ~ 1,
+    Adduct == "(M+F)-" ~ 2,
+    TRUE ~ 3
+  )) %>% 
+  group_by(variable_id) %>% 
+  slice_min(Adduct.judge) %>% 
+  slice_max(Total.score) %>% 
+  arrange(Compound.name) %>% 
+  mutate(query = URLencode(Compound.name)) %>% 
+  ungroup
+
+name2inchi <- MDAtoolkits::mda_get_cid_fast(
+  data_info = ori_vari_info %>% select(variable_id,query) ,type = 'multiple',core_num = 5
+)
+
+
+
+library(XML)
+library(RCurl)
+user_agents = c(
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.3 Safari/605.1.15",
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/110.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36 Edg/103.0.1264.37',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36 Edg/103.0.1264.37',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0'
+)
+ID = "CHN"
+random_agent <- sample(user_agents,1)
+headers = c('User_Agent' = random_agent,'Accept' = "text/html, */*; q=0.01")
+url <- "https://pmn.plantcyc.org/compound?orgid=ARA&id="
+
+# fetch the HTML content of the page
+html <- RCurl::getURL("https://pmn.plantcyc.org/compound?orgid=ARA&id=HCN&orgid=ARA&tab=SUMMARY",header = headers,.encoding = 'UTF-8')
+
+# parse the HTML using XML package
+doc <- XML::htmlParse(html, asText = TRUE)
+
+# find the table on the page
+table <- XML::getNodeSet(doc, "//table")[[1]]
+
+
+x = RCurl::getURL("https://pmn.plantcyc.org/cpd-tab?id=CPD-659&orgid=ARA&tab=SUMMARY") 
+
+html <- XML::htmlParse(x,ignoreBlanks = T,asText = T) %>% 
+    getNodeSet("//table")
+tbl1 <- html[[1]] %>% xpathApply("//td[1]") %>% xmlValue() %>% read.table(text = .,sep = "\t",blank.lines.skip = T) %>% pull(V1)
+tbl2 <- html[[1]] %>% xpathApply("//td") %>% xmlValue() %>% read.table(text = .,sep = "\t",blank.lines.skip = T) %>% pull(V1)
+
+res = data.frame(
+  Lab.ID = tbl2[1],
+  
+)

@@ -65,15 +65,74 @@ If using commercial software, it is recommended to follow the instructions provi
 
 2. repare your files according to the file storage locations shown in the diagram below.
 
-![file structure]("https://github.com/ShawnWx2019/MetMiner/blob/main/04.www/filetree.png")
+```dir
+02.DemoData
+├── MS1
+│   ├── NEG
+│   │   └── QC
+│   │       ├── QC_01.mzXML
+│   │       ├── QC_02.mzXML
+│   │       ├── QC_03.mzXML
+│   │       └── QC_04.mzXML
+│   └── POS
+│       └── QC
+│           ├── QC_01.mzXML
+│           ├── QC_02.mzXML
+│           ├── QC_03.mzXML
+│           └── QC_04.mzXML
+├── MS2
+│   ├── NEG
+│   │   ├── QC_01.mgf
+│   │   ├── QC_02.mgf
+│   │   ├── QC_03.mgf
+│   │   └── QC_04.mgf
+│   └── POS
+│       ├── QC_01.mgf
+│       ├── QC_02.mgf
+│       ├── QC_03.mgf
+│       └── QC_04.mgf
+├── sample_info.csv
+```
 
 3. run `PreMetaboUpAnalysis.R` under terminal or in Rstudio.
 
     3.1 Note that you should add or remove database according to your own needs, starting from line 480 of the script. Also, make sure to modify the location where the database file is stored.
     
+    ```r
+    load("~/.HPC_tidymass/MS_db/MS_db/snyder_database_hilic0.0.3.rda")
+    load("~/.HPC_tidymass/MS_db/MS_db/mona_database0.0.3.rda")
+    load("~/.HPC_tidymass/MS_db/MS_db/hmdb_database0.0.3.rda")
+    load("~/.HPC_tidymass/MS_db/MS_db/massbank_database0.0.3.rda")
+    load("~/.HPC_tidymass/MS_db/MS_db/RIKEN_PlaSMA_database0.0.1.rda")
+    load("~/.HPC_tidymass/MS_db/MS_db/plantcyc_ms1_database0.0.2.rda")
+    load("~/.HPC_tidymass/MS_db/MS_db/KNApSAcK_ms1_database.rda")
+    load("~/.HPC_tidymass/MS_db/MS_db/kegg_ms1_database0.0.3.rda")
+    object_pos_anno <-
+      annotate_metabolites_mass_dataset(
+        object = object_pos_MRM,
+        polarity = 'positive',
+        ms1.match.ppm = 15,
+        column = T.column,
+        threads = 5,# for ms1 database, DO NOT recommand use all threads, maybe half of cores act better.
+        database = kegg_ms1_database0.0.3,
+        candidate.num = 2
+      )
+    
+    object_pos_anno <-
+      annotate_metabolites_mass_dataset(
+        object = object_pos_anno,
+        polarity = 'positive',
+        ms1.match.ppm = 15,
+        column = T.column,
+        threads = 5,
+        database = plantcyc_ms1_database0.0.2, ## database
+        candidate.num = 2
+      )
+    ```
+    
     3.2 The column name for 'sample information' must be consistent with that in the [sample_info.csv](https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoData/sample_info.csv). You can add more columns, such as 'treat', 'tissue', 'day', and so on.
     
-    3.3 Steps of MRM selection. See MDAtoolkits::extract_fragment, a). order fragment by intensity of each feature. b). Add tags to fragments which have mz gap with precursor ions larger than 15. c). pick the first tagged fragment as product ion. 
+    3.3 Steps of MRM selection. See `MDAtoolkits::extract_fragment`, **a)**. order fragment by intensity of each feature. **b)**. Add tags to fragments which have mz gap with precursor ions larger than 15. **c)**. pick the first tagged fragment as product ion. 
     
   
 
@@ -90,7 +149,7 @@ Rscript ../01.Src/PreMetaboUpAnalysis.R \
         -g "QC"
 ```
 
-
+4. check result
 
 
 
@@ -99,7 +158,6 @@ Rscript ../01.Src/PreMetaboUpAnalysis.R \
 ## Reference
 
 <div id=#refer-anchor-1></div>
-
 
 1. Shen, X., Yan, H., Wang, C., Gao, P., Johnson, C.H. & Snyder, M.P. (2022) TidyMass an object-oriented reproducible analysis framework for LC--MS data. Nature Communications, 13, 4365. DOI: [https://doi.org/10.1038/s41467-022-32155-w](https://www.nature.com/articles/s41467-022-32155-w)
 

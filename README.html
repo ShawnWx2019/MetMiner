@@ -429,24 +429,77 @@ provided by the pipeline.</p>
 <li><p>repare your files according to the file storage locations shown
 in the diagram below.</p></li>
 </ol>
-<div class="float">
-<img src="%22https://github.com/ShawnWx2019/MetMiner/blob/main/04.www/filetree.png%22" alt="file structure" />
-<div class="figcaption">file structure</div>
-</div>
+<pre class="dir"><code>02.DemoData
+├── MS1
+│   ├── NEG
+│   │   └── QC
+│   │       ├── QC_01.mzXML
+│   │       ├── QC_02.mzXML
+│   │       ├── QC_03.mzXML
+│   │       └── QC_04.mzXML
+│   └── POS
+│       └── QC
+│           ├── QC_01.mzXML
+│           ├── QC_02.mzXML
+│           ├── QC_03.mzXML
+│           └── QC_04.mzXML
+├── MS2
+│   ├── NEG
+│   │   ├── QC_01.mgf
+│   │   ├── QC_02.mgf
+│   │   ├── QC_03.mgf
+│   │   └── QC_04.mgf
+│   └── POS
+│       ├── QC_01.mgf
+│       ├── QC_02.mgf
+│       ├── QC_03.mgf
+│       └── QC_04.mgf
+├── sample_info.csv</code></pre>
 <ol start="3" style="list-style-type: decimal">
 <li><p>run <code>PreMetaboUpAnalysis.R</code> under terminal or in
 Rstudio.</p>
 <p>3.1 Note that you should add or remove database according to your own
 needs, starting from line 480 of the script. Also, make sure to modify
 the location where the database file is stored.</p>
+<pre class="r"><code>load(&quot;~/.HPC_tidymass/MS_db/MS_db/snyder_database_hilic0.0.3.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/MS_db/mona_database0.0.3.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/MS_db/hmdb_database0.0.3.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/MS_db/massbank_database0.0.3.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/MS_db/RIKEN_PlaSMA_database0.0.1.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/MS_db/plantcyc_ms1_database0.0.2.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/MS_db/KNApSAcK_ms1_database.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/MS_db/kegg_ms1_database0.0.3.rda&quot;)
+object_pos_anno &lt;-
+  annotate_metabolites_mass_dataset(
+    object = object_pos_MRM,
+    polarity = &#39;positive&#39;,
+    ms1.match.ppm = 15,
+    column = T.column,
+    threads = 5,# for ms1 database, DO NOT recommand use all threads, maybe half of cores act better.
+    database = kegg_ms1_database0.0.3,
+    candidate.num = 2
+  )
+
+object_pos_anno &lt;-
+  annotate_metabolites_mass_dataset(
+    object = object_pos_anno,
+    polarity = &#39;positive&#39;,
+    ms1.match.ppm = 15,
+    column = T.column,
+    threads = 5,
+    database = plantcyc_ms1_database0.0.2, ## database
+    candidate.num = 2
+  )</code></pre>
 <p>3.2 The column name for ‘sample information’ must be consistent with
 that in the <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoData/sample_info.csv">sample_info.csv</a>.
 You can add more columns, such as ‘treat’, ‘tissue’, ‘day’, and so
 on.</p>
-<p>3.3 Steps of MRM selection. See MDAtoolkits::extract_fragment, a).
-order fragment by intensity of each feature. b). Add tags to fragments
-which have mz gap with precursor ions larger than 15. c). pick the first
-tagged fragment as product ion.</p></li>
+<p>3.3 Steps of MRM selection. See
+<code>MDAtoolkits::extract_fragment</code>, <strong>a)</strong>. order
+fragment by intensity of each feature. <strong>b)</strong>. Add tags to
+fragments which have mz gap with precursor ions larger than 15.
+<strong>c)</strong>. pick the first tagged fragment as product
+ion.</p></li>
 </ol>
 <pre class="bash"><code># run Rscript ../01.Src/PreMetaboUpAnalysis.R -h check the explanation of each parameters
 Rscript ../01.Src/PreMetaboUpAnalysis.R \
@@ -458,6 +511,9 @@ Rscript ../01.Src/PreMetaboUpAnalysis.R \
         -t 6 \
         -o T
         -g &quot;QC&quot;</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>check result</li>
+</ol>
 </div>
 <div id="reference" class="section level2">
 <h2>Reference</h2>
