@@ -99,35 +99,34 @@ If using commercial software, it is recommended to follow the instructions provi
     3.1 Note that you should add or remove database according to your own needs, starting from line 480 of the script. Also, make sure to modify the location where the database file is stored.
     
     ```r
-    load("~/.HPC_tidymass/MS_db/MS_db/snyder_database_hilic0.0.3.rda")
-    load("~/.HPC_tidymass/MS_db/MS_db/mona_database0.0.3.rda")
-    load("~/.HPC_tidymass/MS_db/MS_db/hmdb_database0.0.3.rda")
-    load("~/.HPC_tidymass/MS_db/MS_db/massbank_database0.0.3.rda")
-    load("~/.HPC_tidymass/MS_db/MS_db/RIKEN_PlaSMA_database0.0.1.rda")
-    load("~/.HPC_tidymass/MS_db/MS_db/plantcyc_ms1_database0.0.2.rda")
-    load("~/.HPC_tidymass/MS_db/MS_db/KNApSAcK_ms1_database.rda")
-    load("~/.HPC_tidymass/MS_db/MS_db/kegg_ms1_database0.0.3.rda")
-    object_pos_anno <-
-      annotate_metabolites_mass_dataset(
-        object = object_pos_MRM,
-        polarity = 'positive',
-        ms1.match.ppm = 15,
-        column = T.column,
-        threads = 5,# for ms1 database, DO NOT recommand use all threads, maybe half of cores act better.
-        database = kegg_ms1_database0.0.3,
-        candidate.num = 2
-      )
-    
-    object_pos_anno <-
-      annotate_metabolites_mass_dataset(
-        object = object_pos_anno,
-        polarity = 'positive',
-        ms1.match.ppm = 15,
-        column = T.column,
-        threads = 5,
-        database = plantcyc_ms1_database0.0.2, ## database
-        candidate.num = 2
-      )
+    ##> load database
+    load("~/.HPC_tidymass/MS_db/mona_database0.0.3.rda")
+    load("~/.HPC_tidymass/MS_db/RIKEN_PlaSMA_database0.0.1.rda")
+    load("~/.HPC_tidymass/MS_db/knapsack_ath_db.rda")
+    load("~/.HPC_tidymass/MS_db/kegg_ms1_database0.0.3.rda")
+    load("~/.HPC_tidymass/MS_db/RPLC.database.rda")
+    ##> MS1
+        object_pos_anno <-
+          annotate_metabolites_mass_dataset(
+            object = object_pos_MRM,
+            polarity = 'positive',
+            ms1.match.ppm = 15,
+            column = T.column,
+            threads = 5,# for ms1 database, DO NOT recommand use all threads, maybe half of cores act better.
+            database = kegg_ms1_database0.0.3,
+            candidate.num = 2
+          )
+    ##> MS2
+        object_pos_anno <-
+          annotate_metabolites_mass_dataset(
+            object = object_pos_anno,
+            polarity = 'positive',
+            ms1.match.ppm = 15,
+            column = T.column,
+            threads = T.threads,
+            database = mona_database0.0.3,
+            candidate.num = 2
+          )
     ```
     
     3.2 The column name for 'sample information' must be consistent with that in the [sample_info.csv](https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoData/sample_info.csv). You can add more columns, such as 'treat', 'tissue', 'day', and so on.
@@ -137,16 +136,16 @@ If using commercial software, it is recommended to follow the instructions provi
   
 
 ```bash
-# run Rscript ../01.Src/PreMetaboUpAnalysis.R -h check the explanation of each parameters
-Rscript ../01.Src/PreMetaboUpAnalysis.R \
-        -x 02.DemoData/MS1 \ ## MS1 .mzXML file
-        -y 02.DemoData/MS2 \ ## MS2 .mgf file
-        -z 02.DemoData/sample_info.csv \ ## sample information
-        -c 'rp' \ 
-        -m 5 \
-        -t 6 \
-        -o T
-        -g "QC"
+  # run Rscript ../01.Src/PreMetaboUpAnalysis.R -h check the explanation of each parameters
+  Rscript ../01.Src/PreMetaboUpAnalysis.R \
+          -x 02.DemoData/MS1 \ ## MS1 .mzXML file
+          -y 02.DemoData/MS2 \ ## MS2 .mgf file
+          -z 02.DemoData/sample_info.csv \ ## sample information
+          -c 'rp' \ 
+          -m 5 \
+          -t 6 \
+          -o T
+          -g "QC"
 ```
 
 4. check result
@@ -157,7 +156,9 @@ Rscript ../01.Src/PreMetaboUpAnalysis.R \
 # 'EnvName' is generated based on the current time for convenient traceback
 load("workdir/EnvName.rda")
 ```
-This will allow you to further manipulate and analyze the data as necessary.
+This will allow you to further manipulate and analyze the data as necessary. 
+
+For LC-MS data processed by Compound Discoverer (CD) or other software, you first need to export the intensity data for both the precursor and fragment ions. The order of the fragments is arranged based on their intensity. This data should be organized into the table format: [CDLC-MS.xlsx](https://github.com/ShawnWx2019/MetMiner/blob/main/CDLC-MS.xlsx). The column name in bold-red is necessary. Then, you can generate a Triple Quadrupole Mass Spectrometry (TQMS) method using the `MDAtoolkits::mrm_selection_cd` function.
 
 
 
