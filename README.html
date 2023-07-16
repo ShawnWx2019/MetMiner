@@ -425,9 +425,10 @@ available at <a href="https://www.tidymass.org/start/" class="uri">https://www.t
 guidelines. Alternatively, you can also execute the <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/PresMetaboUpAnalysis.R">PresMetaboUpAnalysis.R</a>
 provided by the pipeline.</p>
 <ol style="list-style-type: decimal">
-<li><p>Convert .raw data to .mzXML and .mgf by <a href="https://proteowizard.sourceforge.io/download.html">MSCovert</a></p></li>
-<li><p>repare your files according to the file storage locations shown
-in the diagram below.</p></li>
+<li><p>Convert <code>.raw</code> data to <code>.mzXML</code> and
+<code>.mgf</code> by <a href="https://proteowizard.sourceforge.io/download.html">MSCovert</a></p></li>
+<li><p>prepare your files according to the file storage locations shown
+below.</p></li>
 </ol>
 <pre class="dir"><code>02.DemoData
 ├── MS1
@@ -514,6 +515,20 @@ Rscript ../01.Src/PreMetaboUpAnalysis.R \
 <ol start="4" style="list-style-type: decimal">
 <li>check result</li>
 </ol>
+<p><code>PreMetaboUpAnalysis.R</code>carries out data cleansing and
+metabolite annotation on QC samples, selecting features that possess MS2
+spectra. Then, following the MRM selection steps mentioned above, it
+generates a method for TQMS. You can check the results in the file named
+<a href="https://github.com/ShawnWx2019/MetMiner/blob/main/workdir/05.Annotation/pseudotargeted_QC_anno.xlsx">pseudotargeted_QC_anno.xlsx</a>.
+Additionally, please refer to the <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/workdir/">workdir</a>
+for intermediate files pertaining to data cleaning and metabolite
+annotation. If you find the default steps unsatisfactory, or if you need
+to conduct additional analyses, you can load all intermediate variables
+into R or Rstudio for subsequent analyses using the following code:</p>
+<pre class="r"><code># &#39;EnvName&#39; is generated based on the current time for convenient traceback
+load(&quot;workdir/EnvName.rda&quot;)</code></pre>
+<p>This will allow you to further manipulate and analyze the data as
+necessary.</p>
 </div>
 <div id="reference" class="section level2">
 <h2>Reference</h2>

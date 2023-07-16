@@ -39,7 +39,7 @@ command=matrix(c(
   'min_fraction', 'f', 2, 'double', 'Related to Samples,\n                         to be valid, a group must be found in at least minFraction*n samples, with n=number of samples for each class of samples. A minFraction=0.5 corresponds to 50%.\n                         n=10, minFraction=0.5 => found in at least 5 samples\n                         default:0.5',
   'QC_tag', 'g', 2, 'character', 'File path of QCn.mzXML file placed.\n                         eg: QC.mzXML files placed in NEG/QC, set -g "QC", QC.mzXML files placed in NEG/qc, set -g "qc"',
   'snthresh', 's', 2, 'double', 'Related to intensity,\n                         signal/noise ratio threshold\n                         default: 5',
-  'noise', 'N', 2, 'double', 'Related to intensity,\n                         each centroid must be greater than the “noise” value\n                         default:500'
+  'noise', 'n', 2, 'double', 'Related to intensity,\n                         each centroid must be greater than the “noise” value\n                         default:500'
 ),byrow = T, ncol = 5)
 args = getopt(command)
 
@@ -105,7 +105,7 @@ if (is.null(args$p_max)){
 }
 
 if (is.null(args$show_output)){
-  args$show_output = TRUE
+  args$show_output = FALSE
 }
 
 
@@ -113,11 +113,11 @@ if (is.null(args$show_output)){
 library(tidymass)
 ##test
 if (TEST == "TRUE") {
-  T.MS1 = "~/tmp/hpctest/presudo/MS1";
-  T.MS2 = "~/tmp/hpctest/presudo/MS2";
-  T.sample_info = "~/tmp/hpctest/presudo/sample_info.xlsx"
+  T.MS1 = "02.DemoData/MS1";
+  T.MS2 = "02.DemoData/MS2";
+  T.sample_info = "02.DemoData/sample_info.xlsx"
   T.ppm = 10;
-  T.threads = 8;
+  T.threads = 14;
   T.show_output = FALSE;
   T.p_min = 10;
   T.p_max = 60;
@@ -125,7 +125,11 @@ if (TEST == "TRUE") {
   T.QC_tag = "QC";
   T.column = 'rp';
   T.snthresh = 5;
-  T.noise = 500
+  T.noise = 500;
+  ms1.pos <- paste0(T.MS1,"/POS/")
+  ms1.neg <- paste0(T.MS1,"/NEG/")
+  ms2.pos <- paste0(T.MS2,"/POS/")
+  ms2.neg <- paste0(T.MS2,"/NEG/")
 } else {
   T.MS1 = args$MS1;
   T.MS2 = args$MS2;
@@ -146,15 +150,17 @@ if (TEST == "TRUE") {
   ms2.neg <- paste0(T.MS2,"/NEG/")
 }
 #> 
-#> 
+library(tidymass)
 suppressMessages(if (!require('devtools')) BiocManager::install('devtools'))
+suppressMessages(if (!require('conflicted')) BiocManager::install('conflicted'))
 suppressMessages(if (!require('tidyverse')) BiocManager::install('tidyverse'))
 suppressMessages(if (!require('patchwork')) BiocManager::install('patchwork'))
 suppressMessages(if (!require('bruceR')) install.packages("bruceR", dep=TRUE))
 suppressMessages(if (!require('MDAtoolkits')) install_github(repo = "ShawnWx2019/MDAtoolkits",ref = 'master'))
-suppressMessages(if (!require('MDAtoolkits')) install_github(repo = "ShawnWx2019/IMOtoolkits"))
-library(tidymass)
+suppressMessages(if (!require('IMOtoolkits')) install_github(repo = "ShawnWx2019/IMOtoolkits"))
 
+suppressMessages(conflict_prefer_all("dplyr"))
+#tidymass::update_tidymass(packages = "all",from = "gitlab")
 
 # process data ------------------------------------------------------------
 
@@ -431,10 +437,7 @@ object_pos_MRM <-
 
 
 load("~/.HPC_tidymass/MS_db/mona_database0.0.3.rda")
-load("~/.HPC_tidymass/MS_db/hmdb_database0.0.3.rda")
-load("~/.HPC_tidymass/MS_db/massbank_database0.0.3.rda")
 load("~/.HPC_tidymass/MS_db/RIKEN_PlaSMA_database0.0.1.rda")
-load("~/.HPC_tidymass/MS_db/plantcyc_ms1_database0.0.2.rda")
 load("~/.HPC_tidymass/MS_db/knapsack_ath_db.rda")
 load("~/.HPC_tidymass/MS_db/kegg_ms1_database0.0.3.rda")
 load("~/.HPC_tidymass/MS_db/RPLC.database.rda")
@@ -450,16 +453,7 @@ object_pos_anno <-
     candidate.num = 2
   )
 
-object_pos_anno <-
-  annotate_metabolites_mass_dataset(
-    object = object_pos_anno,
-    polarity = 'positive',
-    ms1.match.ppm = 15,
-    column = T.column,
-    threads = 5,
-    database = plantcyc_ms1_database0.0.2,
-    candidate.num = 2
-  )
+
 
 object_pos_anno <-
   annotate_metabolites_mass_dataset(
@@ -495,28 +489,6 @@ object_pos_anno <-
     candidate.num = 2
   )
 
-object_pos_anno <-
-  annotate_metabolites_mass_dataset(
-    object = object_pos_anno,
-    polarity = 'positive',
-    ms1.match.ppm = 15,
-    column = T.column,
-    threads = T.threads,
-    database = massbank_database0.0.3,
-    candidate.num = 2
-  )
-
-object_pos_anno <-
-  annotate_metabolites_mass_dataset(
-    object = object_pos_anno,
-    polarity = 'positive',
-    ms1.match.ppm = 15,
-    column = T.column,
-    threads = T.threads,
-    database = hmdb_database0.0.3,
-    candidate.num = 2
-  )
-
 
 object_pos_anno <-
   annotate_metabolites_mass_dataset(
@@ -529,7 +501,7 @@ object_pos_anno <-
     candidate.num = 2
   )
 
-save(object_pos_anno,file = "object_pos_anno.rds")
+save(object_pos_anno,file = "workdir/05.Annotation/object_pos_anno.rds")
 
 anno_tmp <- 
 object_pos_anno %>% extract_annotation_table()
@@ -721,16 +693,6 @@ object_neg_anno <-
     candidate.num = 2
   )
 
-object_neg_anno <-
-  annotate_metabolites_mass_dataset(
-    object = object_neg_anno,
-    polarity = 'negative',
-    ms1.match.ppm = 15,
-    column = T.column,
-    threads = 5,
-    database = plantcyc_ms1_database0.0.2,
-    candidate.num = 2
-  )
 
 object_neg_anno <-
   annotate_metabolites_mass_dataset(
@@ -739,7 +701,7 @@ object_neg_anno <-
     ms1.match.ppm = 15,
     column = T.column,
     threads = 5,
-    database = KNApSAcK_ms1_database0.0.1,
+    database = knapsack_ath_db,
     candidate.num = 2
   )
 # for ms2
@@ -773,34 +735,11 @@ object_neg_anno <-
     ms1.match.ppm = 15,
     column = T.column,
     threads = T.threads,
-    database = massbank_database0.0.3,
-    candidate.num = 2
-  )
-
-object_neg_anno <-
-  annotate_metabolites_mass_dataset(
-    object = object_neg_anno,
-    polarity = 'negative',
-    ms1.match.ppm = 15,
-    column = T.column,
-    threads = T.threads,
-    database = hmdb_database0.0.3,
-    candidate.num = 2
-  )
-
-
-object_neg_anno <-
-  annotate_metabolites_mass_dataset(
-    object = object_neg_anno,
-    polarity = 'negative',
-    ms1.match.ppm = 15,
-    column = T.column,
-    threads = T.threads,
     database = RIKEN_PlaSMA_database0.0.1,
     candidate.num = 2
   )
 
-save(object_neg_anno,file = "object_neg_anno.rds")
+save(object_neg_anno,file = "workdir/05.Annotation/object_neg_anno.rds")
 
 
 
@@ -850,47 +789,12 @@ ori_vari_info <-
   arrange(Compound.name) %>% 
   mutate(query = URLencode(Compound.name)) %>% 
   ungroup
-
-name2inchi <- MDAtoolkits::mda_get_cid_fast(
-  data_info = ori_vari_info %>% select(variable_id,query) ,type = 'multiple',core_num = 5
-)
-
+MRM_method <- ori_vari_info %>% 
+  select(variable_id,mz,rt,precursor,product)
+writexl::write_xlsx(list(annotation = ori_vari_info,TQMS_method = MRM_method),"workdir/05.Annotation/pseudotargeted_QC_anno.xlsx")
 
 
-library(XML)
-library(RCurl)
-user_agents = c(
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.3 Safari/605.1.15",
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/110.0',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36 Edg/103.0.1264.37',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36 Edg/103.0.1264.37',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:101.0) Gecko/20100101 Firefox/101.0'
-)
-ID = "CHN"
-random_agent <- sample(user_agents,1)
-headers = c('User_Agent' = random_agent,'Accept' = "text/html, */*; q=0.01")
-url <- "https://pmn.plantcyc.org/compound?orgid=ARA&id="
 
-# fetch the HTML content of the page
-html <- RCurl::getURL("https://pmn.plantcyc.org/compound?orgid=ARA&id=HCN&orgid=ARA&tab=SUMMARY",header = headers,.encoding = 'UTF-8')
+save.image(paste0("workdir/",Sys.time() %>% str_replace_all("-|:| ","_"),".rda"))
 
-# parse the HTML using XML package
-doc <- XML::htmlParse(html, asText = TRUE)
-
-# find the table on the page
-table <- XML::getNodeSet(doc, "//table")[[1]]
-
-
-x = RCurl::getURL("https://pmn.plantcyc.org/cpd-tab?id=CPD-659&orgid=ARA&tab=SUMMARY") 
-
-html <- XML::htmlParse(x,ignoreBlanks = T,asText = T) %>% 
-    getNodeSet("//table")
-tbl1 <- html[[1]] %>% xpathApply("//td[1]") %>% xmlValue() %>% read.table(text = .,sep = "\t",blank.lines.skip = T) %>% pull(V1)
-tbl2 <- html[[1]] %>% xpathApply("//td") %>% xmlValue() %>% read.table(text = .,sep = "\t",blank.lines.skip = T) %>% pull(V1)
-
-res = data.frame(
-  Lab.ID = tbl2[1],
-  
-)
+#load("workdir/2023_07_16_09_54_55.035713.rda")

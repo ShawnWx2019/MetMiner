@@ -61,9 +61,9 @@ For pseudotargeted metabolomics, in the initial stage, HPLC experiments can be c
 
 If using commercial software, it is recommended to follow the instructions provided in the software's manual for step-by-step analysis. If using TidyMass, it is advised to refer to the tutorial available at https://www.tidymass.org/start/ and follow the provided guidelines. Alternatively, you can also execute the [PresMetaboUpAnalysis.R](https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/PresMetaboUpAnalysis.R) provided by the pipeline.
 
-1. Convert .raw data to .mzXML and .mgf by [MSCovert](https://proteowizard.sourceforge.io/download.html)
+1. Convert `.raw` data to `.mzXML` and `.mgf` by [MSCovert](https://proteowizard.sourceforge.io/download.html)
 
-2. repare your files according to the file storage locations shown in the diagram below.
+2. prepare your files according to the file storage locations shown below.
 
 ```dir
 02.DemoData
@@ -151,6 +151,13 @@ Rscript ../01.Src/PreMetaboUpAnalysis.R \
 
 4. check result
 
+`PreMetaboUpAnalysis.R`carries out data cleansing and metabolite annotation on QC samples, selecting features that possess MS2 spectra. Then, following the MRM selection steps mentioned above, it generates a method for TQMS. You can check the results in the file named [pseudotargeted_QC_anno.xlsx](https://github.com/ShawnWx2019/MetMiner/blob/main/workdir/05.Annotation/pseudotargeted_QC_anno.xlsx). Additionally, please refer to the [workdir](https://github.com/ShawnWx2019/MetMiner/blob/main/workdir/) for intermediate files pertaining to data cleaning and metabolite annotation. If you find the default steps unsatisfactory, or if you need to conduct additional analyses, you can load all intermediate variables into R or Rstudio for subsequent analyses using the following code:
+
+```r
+# 'EnvName' is generated based on the current time for convenient traceback
+load("workdir/EnvName.rda")
+```
+This will allow you to further manipulate and analyze the data as necessary.
 
 
 
