@@ -110,7 +110,6 @@ if (is.null(args$show_output)){
 
 
 # test --------------------------------------------------------------------
-library(tidymass)
 ##test
 if (TEST == "TRUE") {
   T.MS1 = "02.DemoData/MS1";

@@ -55,13 +55,13 @@ hpc-runTidymass -h
 
 Here we refer to the process of obtaining the metabolomics data from LC-MS raw data to the generation of a metabolite accumulation matrix as <font color=blue>**「upstream data analysis data」**</font>. It includes processes such as <font color=green> 「raw data format conversion」, 「peak picking」, 「data cleaning」, and 「data normalization」</font>. In this pipeline, this part is typically performed by TidyMass or Compound Discoverer. If you have used other software for peak picking, you can refer to https://www.tidymass.org/start/create_mass_dataset/ to create a mass_dataset, which can then be used for subsequent analysis with TidyMass.
 
-## 1.1 Pseudotargeted metabolomics
+## 1.1 Pseudotargeted Metabolomics
 
-### 1.1.1 Generate TQMS method.
+### 1.1.1 Generate TQMS Method.
 
 For pseudotargeted metabolomics, in the initial stage, HPLC experiments can be conducted using 3-10 QC (quality control) samples. Since the data volume is relatively small, and considering the completeness of commercial software databases, we recommend utilizing dedicated analysis software for peak detection and library searching. Alternatively, you can also opt to perform upstream analysis directly with TidyMass, followed by MRM (Multiple Reaction Monitoring) selection to generate a TQMS (Triple Quadrupole Mass Spectrometry) method.
 
-<font color=blue, face=bold, size=3.5>Generate TQMS method from raw data</font>
+**Generate TQMS method from raw data**
 
 
 If using commercial software, it is recommended to follow the instructions provided in the software's manual for step-by-step analysis. If using TidyMass, it is advised to refer to the tutorial available at https://www.tidymass.org/start/ and follow the provided guidelines. Alternatively, you can also execute the [PresMetaboUpAnalysis.R](https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/PresMetaboUpAnalysis.R) provided by the pipeline.
@@ -168,8 +168,42 @@ This will allow you to further manipulate and analyze the data as necessary.
 For LC-MS data processed by Compound Discoverer (CD) or other software, you first need to export the intensity data for both the precursor and fragment ions. The order of the fragments is arranged based on their intensity. This data should be organized into the table format: [CDLC-MS.xlsx](https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoDat6a/CDLC-MS.xlsx). The column name in bold-red is necessary. Then, you can generate a Triple Quadrupole Mass Spectrometry (TQMS) method using the `MDAtoolkits::mrm_selection_cd` function.
 
 
+### 1.1.2 Data Cleaning of Metabolite TQMS Quantitative Results
 
+After acquiring the TQMS method, we proceed to perform quantitative detection on all samples. Once the quantitative results are obtained, we can construct a mass_dataset following the steps outlined on the tidymass official website. This allows us to carry out subsequent data cleaning and standardization. Alternatively, you can use the Rscript:  [PresMetaboDataCleaning.R](https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/PresMetaboDataCleaning.R) to conduct a one-step data processing, directly yielding a standardized expression matrix, as well as the feature RSD and PCA results both before and after standardization. Results as [workdir2](https://github.com/ShawnWx2019/MetMiner/blob/main/workdir2/) 
 
+**NOTICE：** When using the script for data cleaning, one important aspect to pay attention to is the removal of outliers. In metabolomics experiments involving heterogeneous samples (encompassing different tissues or species), substantial differences between samples can lead to a high proportion of missing values. Some of these might be mistakenly identified and removed as outliers. Therefore, when processing data that includes different tissues or species, add the `-g | --heterogeneous 'yes'` parameter. In addition, if your QC samples have been concentrated, they could also be erroneously removed as outliers. In such a case, it would be necessary to include the `-g | --heterogeneous ' yes` parameter as well.
+
+```bash
+ Rscript 01.Src/PresMetaboDataCleaining.R \
+             -e 02.DemoData/exp_mat_v2.csv \
+             -s 02.DemoData/sample_info_v2.csv \
+             -n 'svr' \
+             -g 'yes' &
+```
+
+1.2 untargeted Metabolomics
+
+When analyzing large-scale untargeted metabolomics data, peak picking and library searching for hundreds or even thousands of samples simultaneously pose a challenge for personal computers. At this point, many commercial software solutions or PC-dependent LC-MS data analysis tools may struggle. 
+
+After exploring various options, we chose to use tidyMass to complete the full process from data format conversion to peak picking, data cleaning, and metabolite annotation for large-scale untargeted metabolomics upstream data analysis. To facilitate usage on server-side, we have also set up an analysis workflow known as HPC-tidyMass.
+
+**NOTIC: **To use this HPC-tidymass, several conditions must be met:
+
+1. The user must be added to the Docker group, as the initial format conversion relies on MSconvert within Docker.
+2. The naming convention for original files: QC as "QC_001", sample as "S_0001", with zeros used to pad the digit length.
+3. When using the script, the absolute path must be used for the original file path, as Docker only recognizes absolute paths when running.
+
+```bash
+##> run
+runTidymass \
+          -i /home/data/shawn/project/fbox/01.rawdata \
+          -t 1 \ ## DO NOT use 2, it dose not work now！
+          -c 'rp' \
+```
+when runTidymass finish, all files, including original data and format-converted files such as .mzXML and .mgf, can be found in the `working_dir` directory. This also includes all mass_datasets produced from the peak picking to data normalization steps, as well as the mass_datasets which contains feature annotation. Moreover, in order to best retain the annotation results, we've categorized the annotation outcomes into four types. The first one is the unfiltered original annotation file, named `Original_annotation`. The second is the result after redundancy removal from the metabolites, named `rm_redundant`. The third type, `Only_MS2`, retains only the features that match with the database via MS2. The third category often has higher confidence; however, due to the limitations of the metabolites annotated in the database, many metabolites could be filtered out, particularly in plant materials abundant in secondary metabolites. 
+
+**NOTIC:** The script has a mechanism in place for checkpoint resumption, which is useful when encountering errors. When an error arises, identify its cause, then check the result files in the `working_dir` to see if they are complete. If they are not, remove the corresponding result directory and rerun the script.
 ## Reference
 
 <div id=#refer-anchor-1></div>
