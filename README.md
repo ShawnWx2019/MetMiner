@@ -57,7 +57,12 @@ Here we refer to the process of obtaining the metabolomics data from LC-MS raw d
 
 ## 1.1 Pseudotargeted metabolomics
 
-For pseudotargeted metabolomics, in the initial stage, HPLC experiments can be conducted using 5-10 QC (quality control) samples. Since the data volume is relatively small, and considering the completeness of commercial software databases, we recommend utilizing dedicated analysis software for peak detection and library searching. Alternatively, you can also opt to perform upstream analysis directly with TidyMass, followed by MRM (Multiple Reaction Monitoring) selection to generate a TQMS (Triple Quadrupole Mass Spectrometry) method.
+### 1.1.1 Generate TQMS method.
+
+For pseudotargeted metabolomics, in the initial stage, HPLC experiments can be conducted using 3-10 QC (quality control) samples. Since the data volume is relatively small, and considering the completeness of commercial software databases, we recommend utilizing dedicated analysis software for peak detection and library searching. Alternatively, you can also opt to perform upstream analysis directly with TidyMass, followed by MRM (Multiple Reaction Monitoring) selection to generate a TQMS (Triple Quadrupole Mass Spectrometry) method.
+
+<font color=blue, face=bold, size=3.5>Generate TQMS method from raw data</font>
+
 
 If using commercial software, it is recommended to follow the instructions provided in the software's manual for step-by-step analysis. If using TidyMass, it is advised to refer to the tutorial available at https://www.tidymass.org/start/ and follow the provided guidelines. Alternatively, you can also execute the [PresMetaboUpAnalysis.R](https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/PresMetaboUpAnalysis.R) provided by the pipeline.
 
@@ -158,7 +163,9 @@ load("workdir/EnvName.rda")
 ```
 This will allow you to further manipulate and analyze the data as necessary. 
 
-For LC-MS data processed by Compound Discoverer (CD) or other software, you first need to export the intensity data for both the precursor and fragment ions. The order of the fragments is arranged based on their intensity. This data should be organized into the table format: [CDLC-MS.xlsx](https://github.com/ShawnWx2019/MetMiner/blob/main/CDLC-MS.xlsx). The column name in bold-red is necessary. Then, you can generate a Triple Quadrupole Mass Spectrometry (TQMS) method using the `MDAtoolkits::mrm_selection_cd` function.
+<font color=blue, face=bold, size=3.5>Generate TQMS method from clean data</font>
+
+For LC-MS data processed by Compound Discoverer (CD) or other software, you first need to export the intensity data for both the precursor and fragment ions. The order of the fragments is arranged based on their intensity. This data should be organized into the table format: [CDLC-MS.xlsx](https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoDat6a/CDLC-MS.xlsx). The column name in bold-red is necessary. Then, you can generate a Triple Quadrupole Mass Spectrometry (TQMS) method using the `MDAtoolkits::mrm_selection_cd` function.
 
 
 

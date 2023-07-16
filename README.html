@@ -410,14 +410,18 @@ create a mass_dataset, which can then be used for subsequent analysis
 with TidyMass.</p>
 <div id="pseudotargeted-metabolomics" class="section level2">
 <h2>1.1 Pseudotargeted metabolomics</h2>
+<div id="generate-tqms-method." class="section level3">
+<h3>1.1.1 Generate TQMS method.</h3>
 <p>For pseudotargeted metabolomics, in the initial stage, HPLC
-experiments can be conducted using 5-10 QC (quality control) samples.
+experiments can be conducted using 3-10 QC (quality control) samples.
 Since the data volume is relatively small, and considering the
 completeness of commercial software databases, we recommend utilizing
 dedicated analysis software for peak detection and library searching.
 Alternatively, you can also opt to perform upstream analysis directly
 with TidyMass, followed by MRM (Multiple Reaction Monitoring) selection
 to generate a TQMS (Triple Quadrupole Mass Spectrometry) method.</p>
+<p><font color="blue," face="bold," size="3.5">Generate TQMS method from raw
+data</font></p>
 <p>If using commercial software, it is recommended to follow the
 instructions provided in the software’s manual for step-by-step
 analysis. If using TidyMass, it is advised to refer to the tutorial
@@ -462,35 +466,34 @@ Rstudio.</p>
 <p>3.1 Note that you should add or remove database according to your own
 needs, starting from line 480 of the script. Also, make sure to modify
 the location where the database file is stored.</p>
-<pre class="r"><code>load(&quot;~/.HPC_tidymass/MS_db/MS_db/snyder_database_hilic0.0.3.rda&quot;)
-load(&quot;~/.HPC_tidymass/MS_db/MS_db/mona_database0.0.3.rda&quot;)
-load(&quot;~/.HPC_tidymass/MS_db/MS_db/hmdb_database0.0.3.rda&quot;)
-load(&quot;~/.HPC_tidymass/MS_db/MS_db/massbank_database0.0.3.rda&quot;)
-load(&quot;~/.HPC_tidymass/MS_db/MS_db/RIKEN_PlaSMA_database0.0.1.rda&quot;)
-load(&quot;~/.HPC_tidymass/MS_db/MS_db/plantcyc_ms1_database0.0.2.rda&quot;)
-load(&quot;~/.HPC_tidymass/MS_db/MS_db/KNApSAcK_ms1_database.rda&quot;)
-load(&quot;~/.HPC_tidymass/MS_db/MS_db/kegg_ms1_database0.0.3.rda&quot;)
-object_pos_anno &lt;-
-  annotate_metabolites_mass_dataset(
-    object = object_pos_MRM,
-    polarity = &#39;positive&#39;,
-    ms1.match.ppm = 15,
-    column = T.column,
-    threads = 5,# for ms1 database, DO NOT recommand use all threads, maybe half of cores act better.
-    database = kegg_ms1_database0.0.3,
-    candidate.num = 2
-  )
-
-object_pos_anno &lt;-
-  annotate_metabolites_mass_dataset(
-    object = object_pos_anno,
-    polarity = &#39;positive&#39;,
-    ms1.match.ppm = 15,
-    column = T.column,
-    threads = 5,
-    database = plantcyc_ms1_database0.0.2, ## database
-    candidate.num = 2
-  )</code></pre>
+<pre class="r"><code>##&gt; load database
+load(&quot;~/.HPC_tidymass/MS_db/mona_database0.0.3.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/RIKEN_PlaSMA_database0.0.1.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/knapsack_ath_db.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/kegg_ms1_database0.0.3.rda&quot;)
+load(&quot;~/.HPC_tidymass/MS_db/RPLC.database.rda&quot;)
+##&gt; MS1
+    object_pos_anno &lt;-
+      annotate_metabolites_mass_dataset(
+        object = object_pos_MRM,
+        polarity = &#39;positive&#39;,
+        ms1.match.ppm = 15,
+        column = T.column,
+        threads = 5,# for ms1 database, DO NOT recommand use all threads, maybe half of cores act better.
+        database = kegg_ms1_database0.0.3,
+        candidate.num = 2
+      )
+##&gt; MS2
+    object_pos_anno &lt;-
+      annotate_metabolites_mass_dataset(
+        object = object_pos_anno,
+        polarity = &#39;positive&#39;,
+        ms1.match.ppm = 15,
+        column = T.column,
+        threads = T.threads,
+        database = mona_database0.0.3,
+        candidate.num = 2
+      )</code></pre>
 <p>3.2 The column name for ‘sample information’ must be consistent with
 that in the <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoData/sample_info.csv">sample_info.csv</a>.
 You can add more columns, such as ‘treat’, ‘tissue’, ‘day’, and so
@@ -502,16 +505,16 @@ fragments which have mz gap with precursor ions larger than 15.
 <strong>c)</strong>. pick the first tagged fragment as product
 ion.</p></li>
 </ol>
-<pre class="bash"><code># run Rscript ../01.Src/PreMetaboUpAnalysis.R -h check the explanation of each parameters
-Rscript ../01.Src/PreMetaboUpAnalysis.R \
-        -x 02.DemoData/MS1 \ ## MS1 .mzXML file
-        -y 02.DemoData/MS2 \ ## MS2 .mgf file
-        -z 02.DemoData/sample_info.csv \ ## sample information
-        -c &#39;rp&#39; \ 
-        -m 5 \
-        -t 6 \
-        -o T
-        -g &quot;QC&quot;</code></pre>
+<pre class="bash"><code>  # run Rscript ../01.Src/PreMetaboUpAnalysis.R -h check the explanation of each parameters
+  Rscript ../01.Src/PreMetaboUpAnalysis.R \
+          -x 02.DemoData/MS1 \ ## MS1 .mzXML file
+          -y 02.DemoData/MS2 \ ## MS2 .mgf file
+          -z 02.DemoData/sample_info.csv \ ## sample information
+          -c &#39;rp&#39; \ 
+          -m 5 \
+          -t 6 \
+          -o T
+          -g &quot;QC&quot;</code></pre>
 <ol start="4" style="list-style-type: decimal">
 <li>check result</li>
 </ol>
@@ -529,6 +532,17 @@ into R or Rstudio for subsequent analyses using the following code:</p>
 load(&quot;workdir/EnvName.rda&quot;)</code></pre>
 <p>This will allow you to further manipulate and analyze the data as
 necessary.</p>
+<p><font color="blue," face="bold," size="3.5">Generate TQMS method from clean
+data</font></p>
+<p>For LC-MS data processed by Compound Discoverer (CD) or other
+software, you first need to export the intensity data for both the
+precursor and fragment ions. The order of the fragments is arranged
+based on their intensity. This data should be organized into the table
+format: <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoDat6a/CDLC-MS.xlsx">CDLC-MS.xlsx</a>.
+The column name in bold-red is necessary. Then, you can generate a
+Triple Quadrupole Mass Spectrometry (TQMS) method using the
+<code>MDAtoolkits::mrm_selection_cd</code> function.</p>
+</div>
 </div>
 <div id="reference" class="section level2">
 <h2>Reference</h2>
