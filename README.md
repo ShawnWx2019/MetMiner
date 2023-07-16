@@ -51,6 +51,10 @@ cd HPC_tidymass && chmod +x init.sh && bash init.sh
 hpc-runTidymass -h
 ```
 
+A user-friendly WGCNA Shiny app: [**WGCNA-shinyApp** ](https://github.com/ShawnWx2019/WGCNA-shinyApp) follow the steps of [WGCNA-shinyapp readme file](https://github.com/ShawnWx2019/WGCNA-shinyApp/blob/main/README.md)
+
+
+
 # Step 1. Upstream analysis
 
 Here we refer to the process of obtaining the metabolomics data from LC-MS raw data to the generation of a metabolite accumulation matrix as <font color=blue>**「upstream data analysis data」**</font>. It includes processes such as <font color=green> 「raw data format conversion」, 「peak picking」, 「data cleaning」, and 「data normalization」</font>. In this pipeline, this part is typically performed by TidyMass or Compound Discoverer. If you have used other software for peak picking, you can refer to https://www.tidymass.org/start/create_mass_dataset/ to create a mass_dataset, which can then be used for subsequent analysis with TidyMass.
@@ -208,11 +212,31 @@ when runTidymass finish, all files, including original data and format-converted
 
 # Step 2. Downstream Analysis
 
-Downstream data analysis of metabolomics is a critical step in metabolomics data mining. At present, most tools developed for metabolomics downstream analysis mainly serve animals, humans, and diseases. However, the data mining for plant metabolomics is relatively underdeveloped. To address this, we've developed `MDAtoolkits (beta)` to perform some routine downstream metabolomics analyses. These include typical analyses such as differential metabolite (DAM) analysis, PCA analysis, metabolite classification, metabolite enrichment analysis, and more.
+Downstream data analysis of metabolomics is a critical step in metabolomics data mining. At present, most tools developed for metabolomics downstream analysis mainly serve animals, humans, and diseases. However, the data mining for plant metabolomics is relatively underdeveloped. To address this, we've developed `MDAtoolkits (beta)` to perform some conventional downstream metabolomics analyses. These include typical analyses such as differential metabolite (DAM) analysis, PCA analysis, metabolite classification, metabolite enrichment analysis, and more.
 
 In addition, for large-scale metabolomics data, the swift, efficient, and accurate extraction of useful information from complex datasets has always been a challenge. To tackle this, we use the WGCNA method to quickly associate metabolites with samples. Through iterative removal of compounds that cannot be classified, we can rapidly and efficiently construct a weighted co-accumulation network of metabolites. At the same time, by integrating sample attributes, we can analyze the underlying biological issues at the metabolic level in the population scale.
 
-## 2.1 Routine Analysis and Visualization of Metabolomics Data
+## 2.1 Conventional  Analysis and Visualization of Metabolomics Data
+
+**Compound classification**   
+
+ClassyFire is a comprehensive, flexible, and computable, purely structure-based chemical taxonomy (ChemOnt), developed by chemists, along with a computer program (ClassyFire) that uses only chemical structures and structural features to automatically assign all known chemical compounds to a taxonomy consisting of more than 4800 different categories [Djoumbou et.al](#refer-anchor-2). 
+
+The ClassyFire database facilitates the retrieval of compound classifications by utilizing the compound's unique InChIKey. We generally execute batch conversions of metabolites using the [ClassyFire Batch by Fiehn Lab (cbf)](https://cfb.fiehnlab.ucdavis.edu/#/). Although some local databases offer corresponding InChIKeys for their compounds, a majority do not. For these unaccommodated metabolites, we must first procure the InChIKey from PubChem using the compound's name, then subsequently obtain the classification data via the CBF.
+
+To streamline this process, we've developed a series of web crawler scripts to fetch the information. The functions are as follows:
+
+1. `MDAtoolkits::mda_get_cid & MDAtoolkits::mda_pubchem_crawler`, convert compound name to pubchem cid and InChIKey via [webchem package](https://github.com/ropensci/webchem)[Szöcs E et.al](#refer-anchor-3)
+
+2. `MDAtoolkits::mda_get_cid_fast`, convert compound name to pubchem InChIKey via [PUG REST](https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest)  **[Recommend]**
+
+3. `MDAtoolkits::mda_classfire`, convert InChIKey to classyfire data via [classyfireR](https://github.com/aberHRML/classyfireR)
+
+4. `MDAtoolkits::cbf_crawler`, convert InChIKey to classyfire data via [cbf api](https://cfb.fiehnlab.ucdavis.edu/) **[Recommend]**
+
+**[NOTICE]** We propose that metabolite classification analysis be performed directly on the database, and that the classification information be incorporated into the database during its construction. We have already carried out classification analyses on the Arabidopsis Thaliana Knapsack and KEGG databases, embedding the classification data within them. Going forward, we will complete the classification annotations for other database.
+
+**Different Accumulation Metabolites Analysis (DAM analysis)**
 
 
 
@@ -223,8 +247,20 @@ In addition, for large-scale metabolomics data, the swift, efficient, and accura
 
 ## Reference
 
-<div id=#refer-anchor-1></div>
+<div id=#refer-anchor-1>
 
 1. Shen, X., Yan, H., Wang, C., Gao, P., Johnson, C.H. & Snyder, M.P. (2022) TidyMass an object-oriented reproducible analysis framework for LC--MS data. Nature Communications, 13, 4365. DOI: [https://doi.org/10.1038/s41467-022-32155-w](https://www.nature.com/articles/s41467-022-32155-w)
 
+</div>
 
+<div id=#refer-anchor-2>
+
+2. Djoumbou Feunang, Y., Eisner, R., Knox, C., et al. (2016) ClassyFire: automated chemical classification with a comprehensive, computable taxonomy. Journal of Cheminformatics, 8, 61. DOI: [https://doi.org/10.1186/s13321-016-0174-y](https://doi.org/10.1186/s13321-016-0174-y)
+
+</div>
+
+<div id=#refer-anchor-3>
+
+3. Szöcs E, Stirling T, Scott ER, et al. (2020) webchem: An R Package to retrieve chemical information from the web. Journal of statistical software 93:. DOI: [https://doi.org/10.18637/jss.v093.i13](https://doi.org/10.18637/jss.v093.i13)
+
+</div>

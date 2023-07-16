@@ -395,6 +395,9 @@ cd HPC_tidymass &amp;&amp; chmod +x init.sh &amp;&amp; bash init.sh
 
 ##&gt; test
 hpc-runTidymass -h</code></pre>
+<p>A user-friendly WGCNA Shiny app: <a href="https://github.com/ShawnWx2019/WGCNA-shinyApp"><strong>WGCNA-shinyApp</strong></a>
+follow the steps of <a href="https://github.com/ShawnWx2019/WGCNA-shinyApp/blob/main/README.md">WGCNA-shinyapp
+readme file</a></p>
 </div>
 <div id="step-1.-upstream-analysis" class="section level1">
 <h1>Step 1. Upstream analysis</h1>
@@ -531,8 +534,7 @@ into R or Rstudio for subsequent analyses using the following code:</p>
 load(&quot;workdir/EnvName.rda&quot;)</code></pre>
 <p>This will allow you to further manipulate and analyze the data as
 necessary.</p>
-<p><font color="blue," face="bold," size="3.5">Generate TQMS method from clean
-data</font></p>
+<p><strong>Generate TQMS method from clean data</strong></p>
 <p>For LC-MS data processed by Compound Discoverer (CD) or other
 software, you first need to export the intensity data for both the
 precursor and fragment ions. The order of the fragments is arranged
@@ -568,7 +570,10 @@ the <code>-g | --heterogeneous &#39; yes</code> parameter as well.</p>
              -s 02.DemoData/sample_info_v2.csv \
              -n &#39;svr&#39; \
              -g &#39;yes&#39; &amp;</code></pre>
-<p>1.2 untargeted Metabolomics</p>
+</div>
+</div>
+<div id="untargeted-metabolomics" class="section level2">
+<h2>1.2 untargeted Metabolomics</h2>
 <p>When analyzing large-scale untargeted metabolomics data, peak picking
 and library searching for hundreds or even thousands of samples
 simultaneously pose a challenge for personal computers. At this point,
@@ -579,13 +584,14 @@ the full process from data format conversion to peak picking, data
 cleaning, and metabolite annotation for large-scale untargeted
 metabolomics upstream data analysis. To facilitate usage on server-side,
 we have also set up an analysis workflow known as HPC-tidyMass.</p>
-<p><strong>NOTIC: </strong>To use this HPC-tidymass, several conditions
+<p><strong>NOTIC:</strong> To use this HPC-tidymass, several conditions
 must be met:</p>
 <ol style="list-style-type: decimal">
 <li>The user must be added to the Docker group, as the initial format
 conversion relies on MSconvert within Docker.</li>
-<li>The naming convention for original files: QC as “QC_001”, sample as
-“S_0001”, with zeros used to pad the digit length.</li>
+<li>The naming convention for original files: QC as <code>QC_001</code>,
+sample as <code>S_0001</code>, with zeros used to pad the digit
+length.</li>
 <li>When using the script, the absolute path must be used for the
 original file path, as Docker only recognizes absolute paths when
 running.</li>
@@ -613,15 +619,84 @@ abundant in secondary metabolites.</p>
 <p><strong>NOTIC:</strong> The script has a mechanism in place for
 checkpoint resumption, which is useful when encountering errors. When an
 error arises, identify its cause, then check the result files in the
-working_dir to see if they are complete. If they are not, remove the
-corresponding result directory and rerun the script. ## Reference</p>
-<div id="id_#refer-anchor-1">
-
+<code>working_dir</code> to see if they are complete. If they are not,
+remove the corresponding result directory and rerun the script.</p>
 </div>
+</div>
+<div id="step-2.-downstream-analysis" class="section level1">
+<h1>Step 2. Downstream Analysis</h1>
+<p>Downstream data analysis of metabolomics is a critical step in
+metabolomics data mining. At present, most tools developed for
+metabolomics downstream analysis mainly serve animals, humans, and
+diseases. However, the data mining for plant metabolomics is relatively
+underdeveloped. To address this, we’ve developed
+<code>MDAtoolkits (beta)</code> to perform some conventional downstream
+metabolomics analyses. These include typical analyses such as
+differential metabolite (DAM) analysis, PCA analysis, metabolite
+classification, metabolite enrichment analysis, and more.</p>
+<p>In addition, for large-scale metabolomics data, the swift, efficient,
+and accurate extraction of useful information from complex datasets has
+always been a challenge. To tackle this, we use the WGCNA method to
+quickly associate metabolites with samples. Through iterative removal of
+compounds that cannot be classified, we can rapidly and efficiently
+construct a weighted co-accumulation network of metabolites. At the same
+time, by integrating sample attributes, we can analyze the underlying
+biological issues at the metabolic level in the population scale.</p>
+<div id="conventional-analysis-and-visualization-of-metabolomics-data" class="section level2">
+<h2>2.1 Conventional Analysis and Visualization of Metabolomics
+Data</h2>
+<p><strong>Compound classification</strong></p>
+<p>ClassyFire is a comprehensive, flexible, and computable, purely
+structure-based chemical taxonomy (ChemOnt), developed by chemists,
+along with a computer program (ClassyFire) that uses only chemical
+structures and structural features to automatically assign all known
+chemical compounds to a taxonomy consisting of more than 4800 different
+categories <a href="#refer-anchor-2">Djoumbou et.al</a>.</p>
+<p>The ClassyFire database facilitates the retrieval of compound
+classifications by utilizing the compound’s unique InChIKey. We
+generally execute batch conversions of metabolites using the <a href="https://cfb.fiehnlab.ucdavis.edu/#/">ClassyFire Batch by Fiehn Lab
+(cbf)</a>. Although some local databases offer corresponding InChIKeys
+for their compounds, a majority do not. For these unaccommodated
+metabolites, we must first procure the InChIKey from PubChem using the
+compound’s name, then subsequently obtain the classification data via
+the CBF.</p>
+<p>To streamline this process, we’ve engineered a series of web scraping
+scripts to automate the data format conversion. The functions are as
+follows:</p>
+<ol style="list-style-type: decimal">
+<li><p>MDAtoolkits::mda_get_cid &amp; MDAtoolkits::mda_pubchem_crawler,
+convert compound name to pubchem cid and InChIKey via <a href="https://github.com/ropensci/webchem">webchem package</a><a href="#refer-anchor-3">Szöcs E et.al</a></p></li>
+<li><p>MDAtoolkits::mda_get_cid_fast, convert compound name to pubchem
+InChIKey via <a href="https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest">PUG REST</a>
+<strong>recommend</strong></p></li>
+<li><p>MDAtoolkits::mda_classfire, convert InChIKey to classyfire data
+via <a href="https://github.com/aberHRML/classyfireR">classyfireR</a></p></li>
+<li><p>MDAtoolkits::cbf_crawler , convert InChIKey to classyfire data
+via <a href="https://cfb.fiehnlab.ucdavis.edu/">cbf api</a>
+<strong>recommend</strong></p></li>
+</ol>
+</div>
+<div id="reference" class="section level2">
+<h2>Reference</h2>
+<div id="id_#refer-anchor-1">
 <ol style="list-style-type: decimal">
 <li>Shen, X., Yan, H., Wang, C., Gao, P., Johnson, C.H. &amp; Snyder,
 M.P. (2022) TidyMass an object-oriented reproducible analysis framework
 for LC–MS data. Nature Communications, 13, 4365. DOI: <a href="https://www.nature.com/articles/s41467-022-32155-w">https://doi.org/10.1038/s41467-022-32155-w</a></li>
+</ol>
+</div>
+<div id="id_#refer-anchor-2">
+<ol start="2" style="list-style-type: decimal">
+<li>Djoumbou Feunang, Y., Eisner, R., Knox, C., et al. (2016)
+ClassyFire: automated chemical classification with a comprehensive,
+computable taxonomy. Journal of Cheminformatics, 8, 61. DOI: <a href="https://doi.org/10.1186/s13321-016-0174-y">https://doi.org/10.1186/s13321-016-0174-y</a></li>
+</ol>
+</div>
+<div id="id_#refer-anchor-3">
+<ol start="3" style="list-style-type: decimal">
+<li>Szöcs E, Stirling T, Scott ER, et al. (2020) webchem: An R Package
+to retrieve chemical information from the web. Journal of statistical
+software 93:. DOI: <a href="https://doi.org/10.18637/jss.v093.i13">https://doi.org/10.18637/jss.v093.i13</a></li>
 </ol>
 </div>
 </div>
