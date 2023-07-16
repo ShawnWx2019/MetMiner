@@ -163,7 +163,7 @@ load("workdir/EnvName.rda")
 ```
 This will allow you to further manipulate and analyze the data as necessary. 
 
-<font color=blue, face=bold, size=3.5>Generate TQMS method from clean data</font>
+**Generate TQMS method from clean data**
 
 For LC-MS data processed by Compound Discoverer (CD) or other software, you first need to export the intensity data for both the precursor and fragment ions. The order of the fragments is arranged based on their intensity. This data should be organized into the table format: [CDLC-MS.xlsx](https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoDat6a/CDLC-MS.xlsx). The column name in bold-red is necessary. Then, you can generate a Triple Quadrupole Mass Spectrometry (TQMS) method using the `MDAtoolkits::mrm_selection_cd` function.
 
@@ -182,16 +182,16 @@ After acquiring the TQMS method, we proceed to perform quantitative detection on
              -g 'yes' &
 ```
 
-1.2 untargeted Metabolomics
+## 1.2 untargeted Metabolomics
 
 When analyzing large-scale untargeted metabolomics data, peak picking and library searching for hundreds or even thousands of samples simultaneously pose a challenge for personal computers. At this point, many commercial software solutions or PC-dependent LC-MS data analysis tools may struggle. 
 
 After exploring various options, we chose to use tidyMass to complete the full process from data format conversion to peak picking, data cleaning, and metabolite annotation for large-scale untargeted metabolomics upstream data analysis. To facilitate usage on server-side, we have also set up an analysis workflow known as HPC-tidyMass.
 
-**NOTIC: **To use this HPC-tidymass, several conditions must be met:
+**NOTIC:** To use this HPC-tidymass, several conditions must be met:
 
 1. The user must be added to the Docker group, as the initial format conversion relies on MSconvert within Docker.
-2. The naming convention for original files: QC as "QC_001", sample as "S_0001", with zeros used to pad the digit length.
+2. The naming convention for original files: QC as `QC_001`, sample as `S_0001`, with zeros used to pad the digit length.
 3. When using the script, the absolute path must be used for the original file path, as Docker only recognizes absolute paths when running.
 
 ```bash
@@ -204,6 +204,23 @@ runTidymass \
 when runTidymass finish, all files, including original data and format-converted files such as .mzXML and .mgf, can be found in the `working_dir` directory. This also includes all mass_datasets produced from the peak picking to data normalization steps, as well as the mass_datasets which contains feature annotation. Moreover, in order to best retain the annotation results, we've categorized the annotation outcomes into four types. The first one is the unfiltered original annotation file, named `Original_annotation`. The second is the result after redundancy removal from the metabolites, named `rm_redundant`. The third type, `Only_MS2`, retains only the features that match with the database via MS2. The third category often has higher confidence; however, due to the limitations of the metabolites annotated in the database, many metabolites could be filtered out, particularly in plant materials abundant in secondary metabolites. 
 
 **NOTIC:** The script has a mechanism in place for checkpoint resumption, which is useful when encountering errors. When an error arises, identify its cause, then check the result files in the `working_dir` to see if they are complete. If they are not, remove the corresponding result directory and rerun the script.
+
+
+# Step 2. Downstream Analysis
+
+Downstream data analysis of metabolomics is a critical step in metabolomics data mining. At present, most tools developed for metabolomics downstream analysis mainly serve animals, humans, and diseases. However, the data mining for plant metabolomics is relatively underdeveloped. To address this, we've developed `MDAtoolkits (beta)` to perform some routine downstream metabolomics analyses. These include typical analyses such as differential metabolite (DAM) analysis, PCA analysis, metabolite classification, metabolite enrichment analysis, and more.
+
+In addition, for large-scale metabolomics data, the swift, efficient, and accurate extraction of useful information from complex datasets has always been a challenge. To tackle this, we use the WGCNA method to quickly associate metabolites with samples. Through iterative removal of compounds that cannot be classified, we can rapidly and efficiently construct a weighted co-accumulation network of metabolites. At the same time, by integrating sample attributes, we can analyze the underlying biological issues at the metabolic level in the population scale.
+
+## 2.1 Routine Analysis and Visualization of Metabolomics Data
+
+
+
+
+
+
+
+
 ## Reference
 
 <div id=#refer-anchor-1></div>
