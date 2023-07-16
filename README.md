@@ -169,7 +169,7 @@ This will allow you to further manipulate and analyze the data as necessary.
 
 **Generate TQMS method from clean data**
 
-For LC-MS data processed by Compound Discoverer (CD) or other software, you first need to export the intensity data for both the precursor and fragment ions. The order of the fragments is arranged based on their intensity. This data should be organized into the table format: [CDLC-MS.xlsx](https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoDat6a/CDLC-MS.xlsx). The column name in bold-red is necessary. Then, you can generate a Triple Quadrupole Mass Spectrometry (TQMS) method using the `MDAtoolkits::mrm_selection_cd` function.
+For LC-MS data processed by Compound Discoverer (CD) or other software, you first need to export the intensity data for both the precursor and fragment ions. The order of the fragments is arranged based on their intensity. This data should be organized into the table format: [CDLC-MS.xlsx](https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoData/CDLC-MS.xlsx). The column name in bold-red is necessary. Then, you can generate a Triple Quadrupole Mass Spectrometry (TQMS) method using the `MDAtoolkits::mrm_selection_cd` function.
 
 
 ### 1.1.2 Data Cleaning of Metabolite TQMS Quantitative Results
@@ -226,19 +226,37 @@ The ClassyFire database facilitates the retrieval of compound classifications by
 
 To streamline this process, we've developed a series of web crawler scripts to fetch the information. The functions are as follows:
 
-1. `MDAtoolkits::mda_get_cid & MDAtoolkits::mda_pubchem_crawler`, convert compound name to pubchem cid and InChIKey via [webchem package](https://github.com/ropensci/webchem)[Szöcs E et.al](#refer-anchor-3)
+1. `MDAtoolkits::mda_get_cid & MDAtoolkits::mda_pubchem_crawler`, convert compound name to pubchem cid and InChIKey via [webchem package](https://github.com/ropensci/webchem) [Szöcs E et.al](#refer-anchor-3).
 
-2. `MDAtoolkits::mda_get_cid_fast`, convert compound name to pubchem InChIKey via [PUG REST](https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest)  **[Recommend]**
+2. `MDAtoolkits::mda_get_cid_fast`, convert compound name to pubchem InChIKey via [PUG REST](https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest).  **[Recommend]**
 
-3. `MDAtoolkits::mda_classfire`, convert InChIKey to classyfire data via [classyfireR](https://github.com/aberHRML/classyfireR)
+3. `MDAtoolkits::mda_classfire`, convert InChIKey to classyfire data via [classyfireR](https://github.com/aberHRML/classyfireR).
 
-4. `MDAtoolkits::cbf_crawler`, convert InChIKey to classyfire data via [cbf api](https://cfb.fiehnlab.ucdavis.edu/) **[Recommend]**
+4. `MDAtoolkits::cbf_crawler`, convert InChIKey to classyfire data via [cbf api](https://cfb.fiehnlab.ucdavis.edu/). **[Recommend]**
 
-**[NOTICE]** We propose that metabolite classification analysis be performed directly on the database, and that the classification information be incorporated into the database during its construction. We have already carried out classification analyses on the Arabidopsis Thaliana Knapsack and KEGG databases, embedding the classification data within them. Going forward, we will complete the classification annotations for other database.
+**NOTICE** We propose that metabolite classification analysis be performed directly on the database, and that the classification information be incorporated into the database during its construction. We have already carried out classification analyses on the Arabidopsis Thaliana Knapsack and KEGG databases, embedding the classification data within them. Going forward, we will complete the classification annotations for other database.
 
 **Different Accumulation Metabolites Analysis (DAM analysis)**
 
+DAM constitutes a critical step in metabolomics data analysis, enabling direct comparison of metabolic differences between two type of samples. Common methods for identifying DAMs include using a t-test, analysis of variance (ANOVA), or Wilcoxon rank-sum test for p-value combined with log2 fold change for judgment. Alternatively, one could employ methods such as partial least squares-discriminant analysis (PLS-DA) or orthogonal partial least squares-discriminant analysis (OPLS-DA) to derive VIP (Variable Importance in Projection) values and log2 fold change as criteria. The `MDAtoolkits::DM_analysis` function allows for swift completion of differential testing as well as PLS-DA (or OPLS-DA). It also provides essential statistical metrics such as the p-value for differential significance testing, q-value for multiple testing corrections, log2 fold change representing the difference multiple, and the VIP (Variable Importance in Projection) value.
 
+```r
+mat <- 
+object %>% 
+  extract_expression_data()
+res_case_vs_control = 
+  DM_analysis(x = mat,
+              left_index = c("S_001","S_002","S_003"),
+              right_index = c("S_004","S_005","S_006"),
+              left = "case",
+              right = "control",
+              method = 't-test',
+              method2 = 'opls-da') 
+```
+
+In addition, to better integrate with tidymass, we've designed a set of visualization functions that directly operate on 'mass_datamass'. These functions facilitate the visualization of Principal Component Analysis (PCA)`mda_pca`, volcano plots for differential analysis`DAM_volcano `, as well as visual representation of the relative standard deviation (RSD) results for metabolite stability in quality control (QC) samples before and after normalization `mda_rsd`.
+
+**KEGG or ClassyFire enrichment analysis**
 
 
 
