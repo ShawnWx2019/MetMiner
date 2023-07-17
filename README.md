@@ -176,7 +176,7 @@ For LC-MS data processed by Compound Discoverer (CD) or other software, you firs
 
 After acquiring the TQMS method, we proceed to perform quantitative detection on all samples. Once the quantitative results are obtained, we can construct a mass_dataset following the steps outlined on the tidymass official website. This allows us to carry out subsequent data cleaning and standardization. Alternatively, you can use the Rscript:  [PresMetaboDataCleaning.R](https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/PresMetaboDataCleaning.R) to conduct a one-step data processing, directly yielding a standardized expression matrix, as well as the feature RSD and PCA results both before and after standardization. Results as [workdir2](https://github.com/ShawnWx2019/MetMiner/blob/main/workdir2/) 
 
-**NOTICE：** When using the script for data cleaning, one important aspect to pay attention to is the removal of outliers. In metabolomics experiments involving heterogeneous samples (encompassing different tissues or species), substantial differences between samples can lead to a high proportion of missing values. Some of these might be mistakenly identified and removed as outliers. Therefore, when processing data that includes different tissues or species, add the `-g | --heterogeneous 'yes'` parameter. In addition, if your QC samples have been concentrated, they could also be erroneously removed as outliers. In such a case, it would be necessary to include the `-g | --heterogeneous ' yes` parameter as well.
+**NOTICE：** When using the script for data cleaning, one important aspect to pay attention to is the removal of outliers. In metabolomics experiments involving heterogeneous samples (encompassing different tissues or species), substantial differences between samples can lead to a high proportion of missing values. Some of these might be mistakenly identified and removed as outliers. Therefore, when processing data that includes different tissues or species, add the `-g | --heterogeneous 'yes'` parameter. In addition, if your QC samples have been concentrated, they could also be erroneously removed as outliers. In such a case, it would be necessary to include the `-g | --heterogeneous ' yes` parameter as well. Additionally, if discrepancies exist among your samples, modifications to the script will be required. For example, in our study, we have randomly incorporated seven col-0 into the mutants, setting our filtering parameters at QC < 0.2, WT < 0.2, and MT < 0.5. The results within workdir2 were generated using default parameters, specifically applying only QC < 0.2. Consequently, the quantity of metabolites identified significantly exceeded the final count of metabolites selected in the publication.
 
 ```bash
  Rscript 01.Src/PresMetaboDataCleaining.R \
@@ -216,7 +216,7 @@ Downstream data analysis of metabolomics is a critical step in metabolomics data
 
 In addition, for large-scale metabolomics data, the swift, efficient, and accurate extraction of useful information from complex datasets has always been a challenge. To tackle this, we use the WGCNA method to quickly associate metabolites with samples. Through iterative removal of compounds that cannot be classified, we can rapidly and efficiently construct a weighted co-accumulation network of metabolites. At the same time, by integrating sample attributes, we can analyze the underlying biological issues at the metabolic level in the population scale.
 
-## 2.1 Conventional  Analysis and Visualization of Metabolomics Data
+## 2.1 Conventional Analysis and Visualization of Metabolomics Data
 
 **Compound classification**   
 
@@ -262,7 +262,7 @@ Enrichment analysis is a powerful tool for exploring how metabolite sets influen
 
 *a) run KEGG enrichment analysis*
 
-Currently, we have constructed the KEGG database for major plants and crops (rice, corn, wheat, soybeans, rapeseed, cotton, Arabidopsis, TBtools-keggbackend), which can be found in the [03.Document](https://github.com/ShawnWx2019/MetMiner/blob/main/) folder.
+Currently, we have constructed the KEGG database for major plants and crops (rice, corn, wheat, soybeans, rapeseed, cotton, Arabidopsis, TBtools-keggbackend), which can be found in the [03.Document](https://github.com/ShawnWx2019/MetMiner/blob/main/03.Document) folder.
 
 The detailed steps are as follows: 
 
@@ -329,9 +329,122 @@ res.sim <- enrichplot::pairwise_termsim(res.kegg)
 enrichplot::emapplot(res.sim) ## KEGG term network
 ```
 
-*b) run KEGG enrichment analysis*
+*b) run CLassyFire enrichment analysis*
 
+ClassyFire has not created a species specific database, so we have to build a database derived from the classification results, and then carrying out enrichment analysis. 
 
+Code:
+
+```r
+##> classyfire result via MDAtoolkits::cbf_crawler
+class <- readxl::read_xlsx("02.DemoData/compound_anno.xlsx",sheet = 2)
+##> transform
+class2 <- 
+  class %>% 
+  filter(!is.na(superclass)) %>% 
+  select(-description,-InChIKey) %>% 
+  separate_longer_delim(cols = `parent levels`,delim = " | ") %>% 
+  select(-`Lab ID`) %>% 
+  pivot_longer(!all_of(c("Compound ID","Compound name")),names_to = "levels",values_to = "NAME") %>% 
+  filter(!is.na(NAME))
+  
+##> construct database
+TERM2NAME = 
+  class2 %>% 
+  select(NAME) %>% 
+  distinct() %>% 
+  mutate(TERM = paste0("MC:",str_pad(c(1:nrow(.)),5,"left",'0'))) %>% 
+  filter(NAME != "NA") %>% 
+  select(TERM,NAME)
+
+TERM2COM = 
+  class2 %>% 
+  left_join(TERM2NAME) %>% 
+  select(TERM,`Compound ID`) %>% 
+  setNames(c("TERM","COMPOUND")) %>% 
+  distinct()
+
+writexl::write_xlsx(list(
+  db = class2,
+  TERM2NAME = TERM2NAME,
+  TERM2COM = TERM2COM
+),path = "02.DemoData/classyfire_database.xlsx")
+
+##> enrichment
+
+library(clusterProfiler)
+
+res.class <- enricher(
+  gene = test_c,pvalueCutoff = 1,
+  qvalueCutoff = 1,
+  TERM2GENE = TERM2COM,
+  TERM2NAME = TERM2NAME
+)
+
+dotplot(res.class,showCategory = 15) 
+enrichplot::cnetplot(res.class)
+
+res.sim <- enrichplot::pairwise_termsim(res.class)
+
+enrichplot::emapplot(res.sim)
+```
+
+**Complete DAM analysis pipeline**
+
+We have developed a streamlined, one-step workflow tailored for paired DAM analyses. This comprehensive process encompasses differential analysis, volcano plot generation, PCA, heatmap construction, and KEGG enrichment analysis. Once the enrichment analysis is completed, we proceed by extracting the metabolites from significantly enriched pathways amidst the differential metabolites, followed by their visualization in a heatmap. This notably enhances the ease and efficiency of data mining within our enrichment analysis results. [run_DAM_analysis.R](https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/run_DAM_analysis.R)
+
+```bash
+	Rscript run_DAM_analysis_v3.R  \
+		--peakfile expmat.txt \
+		--group group.txt \
+		--meta_anno annotation.txt \ # must have compound_id compound_name and KEGG.ID 
+		--kegg_db ath_kegg.rds \
+		--left "left" \
+		--right 'right' \
+		--VIP 1 \
+		--pvalue 0.05 \
+		--qvalue 1 \
+		--log2fc 0.26 \
+    --test.method "t-test" \
+    --pls.method "pls-da"
+```
+
+group file:
+
+group|sample_id
+---|---
+left|s_01
+left|s_02
+left|s_03
+right|s_04
+right|s_05
+right|s_06
+
+## 2.2 Advanced Analysis of Metabolomics Data
+
+In the face of metabolomics data mining involving large sample sizes, the extraction of useful information from complex datasets remains a considerable challenge. After testing clustering techniques like k-means and hclust, we discovered that the iterative Weighted Gene Co-expression Network Analysis (iWGCNA) represents an efficient method for data mining. It swiftly and accurately aggregates metabolites exhibiting shared accumulation trends. By delving into the types of compounds encapsulated within each module, alongside their affected metabolic pathways, we are able to uncover a wealth of valuable information.
+
+While we can adhere to the WGCNA manual for a step-by-step analysis, we have developed a user-friendly Shiny app for conducting WGCNA analyses to enhance convenience. This software has become highly stable after several updates. Moreover, we've crafted a one-step WGCNA script, incorporating interactive elements through readline and plotly. We are now capable of excluding outliers and selecting suitable power values, dependent on the progress of our analysis. Instructions for operating the Shiny app can be found here: [WGCNA ShinyApp](https://github.com/ShawnWx2019/WGCNA-shinyApp/blob/main/README.md). The one-step WGCNA can be executed with the code provided below, and the final results can be previewed within [workdir3](https://github.com/ShawnWx2019/MetMiner/blob/main/workdir3/).
+
+```r
+library(ShinyWGCNA)
+library(tidyverse)
+library(tidymass)
+
+expmat <- read.delim("02.DemoData/exp_mat_final.txt")
+category <- read.delim("02.DemoData/category.txt")
+dir.create(path = "workdir3")
+ShinyWGCNA::oneStepWGCNA(
+  exp.mat = expmat,
+  iterative = T,
+  pheofile = category,
+  lazy_modle = F,
+  save_fig = T,
+  F.path = "workdir3/",
+  datatype = "peak area",r_cutoff = 0.15
+)
+
+```
 
 ## Reference
 
