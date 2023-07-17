@@ -539,7 +539,7 @@ necessary.</p>
 software, you first need to export the intensity data for both the
 precursor and fragment ions. The order of the fragments is arranged
 based on their intensity. This data should be organized into the table
-format: <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoDat6a/CDLC-MS.xlsx">CDLC-MS.xlsx</a>.
+format: <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/02.DemoData/CDLC-MS.xlsx">CDLC-MS.xlsx</a>.
 The column name in bold-red is necessary. Then, you can generate a
 Triple Quadrupole Mass Spectrometry (TQMS) method using the
 <code>MDAtoolkits::mrm_selection_cd</code> function.</p>
@@ -660,21 +660,148 @@ for their compounds, a majority do not. For these unaccommodated
 metabolites, we must first procure the InChIKey from PubChem using the
 compound’s name, then subsequently obtain the classification data via
 the CBF.</p>
-<p>To streamline this process, we’ve engineered a series of web scraping
-scripts to automate the data format conversion. The functions are as
-follows:</p>
+<p>To streamline this process, we’ve developed a series of web crawler
+scripts to fetch the information. The functions are as follows:</p>
 <ol style="list-style-type: decimal">
-<li><p>MDAtoolkits::mda_get_cid &amp; MDAtoolkits::mda_pubchem_crawler,
-convert compound name to pubchem cid and InChIKey via <a href="https://github.com/ropensci/webchem">webchem package</a><a href="#refer-anchor-3">Szöcs E et.al</a></p></li>
-<li><p>MDAtoolkits::mda_get_cid_fast, convert compound name to pubchem
-InChIKey via <a href="https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest">PUG REST</a>
-<strong>recommend</strong></p></li>
-<li><p>MDAtoolkits::mda_classfire, convert InChIKey to classyfire data
-via <a href="https://github.com/aberHRML/classyfireR">classyfireR</a></p></li>
-<li><p>MDAtoolkits::cbf_crawler , convert InChIKey to classyfire data
-via <a href="https://cfb.fiehnlab.ucdavis.edu/">cbf api</a>
-<strong>recommend</strong></p></li>
+<li><p><code>MDAtoolkits::mda_get_cid &amp; MDAtoolkits::mda_pubchem_crawler</code>,
+convert compound name to pubchem cid and InChIKey via <a href="https://github.com/ropensci/webchem">webchem package</a> <a href="#refer-anchor-3">Szöcs E et.al</a>.</p></li>
+<li><p><code>MDAtoolkits::mda_get_cid_fast</code>, convert compound name
+to pubchem InChIKey via <a href="https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest">PUG REST</a>.
+<strong>[Recommend]</strong></p></li>
+<li><p><code>MDAtoolkits::mda_classfire</code>, convert InChIKey to
+classyfire data via <a href="https://github.com/aberHRML/classyfireR">classyfireR</a>.</p></li>
+<li><p><code>MDAtoolkits::cbf_crawler</code>, convert InChIKey to
+classyfire data via <a href="https://cfb.fiehnlab.ucdavis.edu/">cbf
+api</a>. <strong>[Recommend]</strong></p></li>
 </ol>
+<p><strong>NOTICE</strong> We propose that metabolite classification
+analysis be performed directly on the database, and that the
+classification information be incorporated into the database during its
+construction. We have already carried out classification analyses on the
+Arabidopsis Thaliana Knapsack and KEGG databases, embedding the
+classification data within them. Going forward, we will complete the
+classification annotations for other database.</p>
+<p><strong>Different Accumulation Metabolites Analysis (DAM
+analysis)</strong></p>
+<p>DAM constitutes a critical step in metabolomics data analysis,
+enabling direct comparison of metabolic differences between two type of
+samples. Common methods for identifying DAMs include using a t-test,
+analysis of variance (ANOVA), or Wilcoxon rank-sum test for p-value
+combined with log2 fold change for judgment. Alternatively, one could
+employ methods such as partial least squares-discriminant analysis
+(PLS-DA) or orthogonal partial least squares-discriminant analysis
+(OPLS-DA) to derive VIP (Variable Importance in Projection) values and
+log2 fold change as criteria. The <code>MDAtoolkits::DM_analysis</code>
+function allows for swift completion of differential testing as well as
+PLS-DA (or OPLS-DA). It also provides essential statistical metrics such
+as the p-value for differential significance testing, q-value for
+multiple testing corrections, log2 fold change representing the
+difference multiple, and the VIP (Variable Importance in Projection)
+value.</p>
+<pre class="r"><code>mat &lt;- 
+object %&gt;% 
+  extract_expression_data()
+res_case_vs_control = 
+  DM_analysis(x = mat,
+              left_index = c(&quot;S_001&quot;,&quot;S_002&quot;,&quot;S_003&quot;),
+              right_index = c(&quot;S_004&quot;,&quot;S_005&quot;,&quot;S_006&quot;),
+              left = &quot;case&quot;,
+              right = &quot;control&quot;,
+              method = &#39;t-test&#39;,
+              method2 = &#39;opls-da&#39;) </code></pre>
+<p>In addition, to better integrate with tidymass, we’ve designed a set
+of visualization functions that directly operate on ‘mass_datamass’.
+These functions facilitate the visualization of Principal Component
+Analysis (PCA)<code>mda_pca</code>, volcano plots for differential
+analysis<code>DAM_volcano</code>, as well as visual representation of
+the relative standard deviation (RSD) results for metabolite stability
+in quality control (QC) samples before and after normalization
+<code>mda_rsd</code>.</p>
+<p><strong>KEGG or ClassyFire enrichment analysis</strong></p>
+<p>Enrichment analysis is a powerful tool for exploring how metabolite
+sets influence metabolic pathways. For instance, conducting KEGG and
+ClassyFire enrichment analyses on differential metabolites or
+metabolites with similar expression patterns allows us to discern which
+metabolic pathways these biologically significant metabolite sets
+participate in, as well as their classification characteristics.
+Theoretically, we should use all metabolites contained in the species as
+a background, then confirm the significance of enrichment through
+hypergeometric distribution testing or Fisher’s exact test. However, in
+practice, it’s difficult to know all the metabolites a species contains,
+and the common approach is to use detected metabolites as the background
+for enrichment analysis. With this in mind, we can generate the
+<code>Compound2Term</code> and <code>Term2Name</code> files using
+<code>MDAtoolkits::mda_make_Keggdb &amp; MDAtoolkits::mda_make_enrichdb</code>,
+and then perform enrichment analysis using
+<code>clusterProfiler::enricher</code>.</p>
+<p><em>a) run KEGG enrichment analysis</em></p>
+<p>Currently, we have constructed the KEGG database for major plants and
+crops (rice, corn, wheat, soybeans, rapeseed, cotton, Arabidopsis,
+TBtools-keggbackend), which can be found in the <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/">03.Document</a>
+folder.</p>
+<p>The detailed steps are as follows:</p>
+<p>First, you need to search for the corresponding Organisms code for
+the species through the website <a href="https://www.genome.jp/kegg/catalog/org_list.html" class="uri">https://www.genome.jp/kegg/catalog/org_list.html</a>. Then,
+you can construct the species metabolite kegg database through the
+following code.</p>
+<pre class="r"><code>library(MDAtoolkits)
+library(progressr)
+handlers(handler_pbcol(
+      adjust = 1.0,
+    complete = function(s) cli::bg_red(cli::col_black(s)),
+  incomplete = function(s) cli::bg_cyan(cli::col_black(s))
+))
+##&gt; For Brassica napus (rape)
+bna_kegg_db &lt;- mda_make_keggdb(organism = &#39;bna&#39;)
+##&gt; save the long-time used bna kegg database.
+save(bna_kegg_db,file = &quot;03.Document/bna_kegg_db.rda&quot;)</code></pre>
+<p>Second, 、 acquire the corresponding KEGG CID for the compounds
+through databases like KEGG, <a href="http://cts.fiehnlab.ucdavis.edu/batch">CTS</a>, etc. We can
+accomplish the automated conversion by using
+<code>MDAtoolkits::mda_name2kegg &amp; MDAtoolkits::CTS_kegg</code>.</p>
+<pre class="r"><code>##&gt; import annotation result
+anno &lt;- readxl::read_xlsx(&quot;02.DemoData/compound_anno.xlsx&quot;,sheet = 1)
+##&gt; filter out the compounds without KEGG.id (some database contains keggid, others are not.)
+query &lt;- anno %&gt;% 
+  mutate(KEGG.ID = str_split(KEGG.ID.iso,&quot;|&quot;,2,T)[,1]) %&gt;% ## get the represent KEGG.id
+  filter(is.na(KEGG.ID) &amp; !str_detect(Compound_name,&quot;^MW:&quot;)) %&gt;% ## remove features already have KEGG.ID and features without compound name.
+  pull(Compound_name) %&gt;% URLencode() %&gt;% unique()## encode the Compound name as URL for web wrawler.
+library(MDAtoolkits)
+name2kegg1 = mda_name2kegg(query = query[1:10]) %&gt;% filter(KEGG != &quot;&quot;)
+name2kegg2 = mda_CTS_kegg(query = query[1:10],key = &#39;name&#39;) %&gt;% filter(KEGG != &quot;&quot;)
+name2kegg3 = rbind(name2kegg1,name2kegg2) 
+name2kegg4 &lt;- anno %&gt;% 
+  mutate(KEGG.ID = str_split(KEGG.ID.iso,&quot;|&quot;,2,T)[,1]) %&gt;% 
+  filter(is.na(KEGG.ID)) %&gt;% 
+  select(Compound_ID,Compound_name) %&gt;% 
+  inner_join(name2kegg3,by = &quot;Compound_name&quot;) 
+ID2kegg &lt;- anno %&gt;% 
+  mutate(KEGG.ID = str_split(KEGG.ID.iso,&quot;|&quot;,2,T)[,1]) %&gt;% 
+  filter(!is.na(KEGG.ID)) %&gt;% select(Compound_id,Compound_name,KEGG.ID) %&gt;% 
+  rename(&quot;KEGG&quot; = &quot;KEGG.ID&quot;) %&gt;% 
+  rbind(name2kegg4) %&gt;% 
+  select(Compound.id,KEGG) %&gt;% 
+  distinct()
+##&gt; load ath databse
+load(&quot;03.Document/ath_kegg_db.rda&quot;)
+##&gt; customized Term 2 Compound_id
+TERM2COMPOUND = ath_kegg_db$TERM2GENE %&gt;% inner_join(ID2TERM,by = c(&quot;CID&quot;=&quot;KEGG&quot;),multiple = &quot;all&quot;) %&gt;% 
+  distinct() %&gt;% select(TERM,Compound_id)
+##&gt; KEGG enrichment analysis
+test_c = anno$Compound_id[1:400] ## head 400 compounds.
+library(clusterProfiler)
+res.kegg &lt;- enricher(
+  gene = test_c,
+  pvalueCutoff = 1, ##&gt; Randomly selected metabolites are likely not to show significant enrichment, hence a p-value of 1 was chosen. When doing this on your own, you can set a stricter threshold for the p-value, such as 0.05.
+  qvalueCutoff = 1,
+  TERM2GENE = TERM2COMPOUND,TERM2NAME = ath_kegg_db$TERM2NAME
+)
+##&gt; visualize
+dotplot(res.kegg,showCategory = 15) ## dotplot
+enrichplot::cnetplot(res.kegg) ## term - compound network
+res.sim &lt;- enrichplot::pairwise_termsim(res.kegg)
+enrichplot::emapplot(res.sim) ## KEGG term network</code></pre>
+<p><em>b) run KEGG enrichment analysis</em></p>
 </div>
 <div id="reference" class="section level2">
 <h2>Reference</h2>

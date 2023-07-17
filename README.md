@@ -258,8 +258,78 @@ In addition, to better integrate with tidymass, we've designed a set of visualiz
 
 **KEGG or ClassyFire enrichment analysis**
 
+Enrichment analysis is a powerful tool for exploring how metabolite sets influence metabolic pathways. For instance, conducting KEGG and ClassyFire enrichment analyses on differential metabolites or metabolites with similar expression patterns allows us to discern which metabolic pathways these biologically significant metabolite sets participate in, as well as their classification characteristics. Theoretically, we should use all metabolites contained in the species as a background, then confirm the significance of enrichment through hypergeometric distribution testing or Fisher's exact test. However, in practice, it's difficult to know all the metabolites a species contains, and the common approach is to use detected metabolites as the background for enrichment analysis. With this in mind, we can generate the `Compound2Term` and `Term2Name` files using `MDAtoolkits::mda_make_Keggdb & MDAtoolkits::mda_make_enrichdb`, and then perform enrichment analysis using `clusterProfiler::enricher`. 
 
+*a) run KEGG enrichment analysis*
 
+Currently, we have constructed the KEGG database for major plants and crops (rice, corn, wheat, soybeans, rapeseed, cotton, Arabidopsis, TBtools-keggbackend), which can be found in the [03.Document](https://github.com/ShawnWx2019/MetMiner/blob/main/) folder.
+
+The detailed steps are as follows: 
+
+First, you need to search for the corresponding Organisms code for the species through the website https://www.genome.jp/kegg/catalog/org_list.html. Then, you can construct the species metabolite kegg database through the following code.
+ 
+```r
+library(MDAtoolkits)
+library(progressr)
+handlers(handler_pbcol(
+      adjust = 1.0,
+    complete = function(s) cli::bg_red(cli::col_black(s)),
+  incomplete = function(s) cli::bg_cyan(cli::col_black(s))
+))
+##> For Brassica napus (rape)
+bna_kegg_db <- mda_make_keggdb(organism = 'bna')
+##> save the long-time used bna kegg database.
+save(bna_kegg_db,file = "03.Document/bna_kegg_db.rda")
+```
+
+Second, 、 acquire the corresponding KEGG CID for the compounds through databases like KEGG, [CTS](http://cts.fiehnlab.ucdavis.edu/batch), etc. We can accomplish the automated conversion by using `MDAtoolkits::mda_name2kegg & MDAtoolkits::CTS_kegg`. 
+
+```r
+##> import annotation result
+anno <- readxl::read_xlsx("02.DemoData/compound_anno.xlsx",sheet = 1)
+##> filter out the compounds without KEGG.id (some database contains keggid, others are not.)
+query <- anno %>% 
+  mutate(KEGG.ID = str_split(KEGG.ID.iso,"|",2,T)[,1]) %>% ## get the represent KEGG.id
+  filter(is.na(KEGG.ID) & !str_detect(Compound_name,"^MW:")) %>% ## remove features already have KEGG.ID and features without compound name.
+  pull(Compound_name) %>% URLencode() %>% unique()## encode the Compound name as URL for web wrawler.
+library(MDAtoolkits)
+name2kegg1 = mda_name2kegg(query = query[1:10]) %>% filter(KEGG != "")
+name2kegg2 = mda_CTS_kegg(query = query[1:10],key = 'name') %>% filter(KEGG != "")
+name2kegg3 = rbind(name2kegg1,name2kegg2) 
+name2kegg4 <- anno %>% 
+  mutate(KEGG.ID = str_split(KEGG.ID.iso,"|",2,T)[,1]) %>% 
+  filter(is.na(KEGG.ID)) %>% 
+  select(Compound_ID,Compound_name) %>% 
+  inner_join(name2kegg3,by = "Compound_name") 
+ID2kegg <- anno %>% 
+  mutate(KEGG.ID = str_split(KEGG.ID.iso,"|",2,T)[,1]) %>% 
+  filter(!is.na(KEGG.ID)) %>% select(Compound_id,Compound_name,KEGG.ID) %>% 
+  rename("KEGG" = "KEGG.ID") %>% 
+  rbind(name2kegg4) %>% 
+  select(Compound.id,KEGG) %>% 
+  distinct()
+##> load ath databse
+load("03.Document/ath_kegg_db.rda")
+##> customized Term 2 Compound_id
+TERM2COMPOUND = ath_kegg_db$TERM2GENE %>% inner_join(ID2TERM,by = c("CID"="KEGG"),multiple = "all") %>% 
+  distinct() %>% select(TERM,Compound_id)
+##> KEGG enrichment analysis
+test_c = anno$Compound_id[1:400] ## head 400 compounds.
+library(clusterProfiler)
+res.kegg <- enricher(
+  gene = test_c,
+  pvalueCutoff = 1, ##> Randomly selected metabolites are likely not to show significant enrichment, hence a p-value of 1 was chosen. When doing this on your own, you can set a stricter threshold for the p-value, such as 0.05.
+  qvalueCutoff = 1,
+  TERM2GENE = TERM2COMPOUND,TERM2NAME = ath_kegg_db$TERM2NAME
+)
+##> visualize
+dotplot(res.kegg,showCategory = 15) ## dotplot
+enrichplot::cnetplot(res.kegg) ## term - compound network
+res.sim <- enrichplot::pairwise_termsim(res.kegg)
+enrichplot::emapplot(res.sim) ## KEGG term network
+```
+
+*b) run KEGG enrichment analysis*
 
 
 
