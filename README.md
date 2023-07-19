@@ -4,6 +4,10 @@
 
 An Integrated Pipeline for Large-Scale Metabolomics Data Processing and Data Mining.
 
+<center>
+<img src="https://shawnmagic-1257599720.cos.ap-chengdu.myqcloud.com/picgo/202307191605305.png" alt="Image" style="max-width:60%">
+</center>
+
 # Getting started
 
 [English](https://github.com/ShawnWx2019/MetMiner/blob/main/README.md) \| [中文](https://github.com/ShawnWx2019/MetMiner/blob/main/README.CN.md)
