@@ -4,7 +4,7 @@
 
 An Integrated Pipeline for Large-Scale Metabolomics Data Processing and Data Mining.
 
-![]("04.www/Figure1.png")
+![Figure1](https://github.com/ShawnWx2019/MetMiner/blob/main/04.www/Figure1.png)
 
 
 # Getting started
