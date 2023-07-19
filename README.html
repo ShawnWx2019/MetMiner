@@ -740,7 +740,7 @@ and then perform enrichment analysis using
 <p><em>a) run KEGG enrichment analysis</em></p>
 <p>Currently, we have constructed the KEGG database for major plants and
 crops (rice, corn, wheat, soybeans, rapeseed, cotton, Arabidopsis,
-TBtools-keggbackend), which can be found in the <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/">03.Document</a>
+TBtools-keggbackend), which can be found in the <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/03.Document">03.Document</a>
 folder.</p>
 <p>The detailed steps are as follows:</p>
 <p>First, you need to search for the corresponding Organisms code for
@@ -804,7 +804,119 @@ dotplot(res.kegg,showCategory = 15) ## dotplot
 enrichplot::cnetplot(res.kegg) ## term - compound network
 res.sim &lt;- enrichplot::pairwise_termsim(res.kegg)
 enrichplot::emapplot(res.sim) ## KEGG term network</code></pre>
-<p><em>b) run KEGG enrichment analysis</em></p>
+<p><em>b) run CLassyFire enrichment analysis</em></p>
+<p>ClassyFire has not created a species specific database, so we have to
+build a database derived from the classification results, and then
+carrying out enrichment analysis.</p>
+<p>Code:</p>
+<pre class="r"><code>##&gt; classyfire result via MDAtoolkits::cbf_crawler
+class &lt;- readxl::read_xlsx(&quot;02.DemoData/compound_anno.xlsx&quot;,sheet = 2)
+##&gt; transform
+class2 &lt;- 
+  class %&gt;% 
+  filter(!is.na(superclass)) %&gt;% 
+  select(-description,-InChIKey) %&gt;% 
+  separate_longer_delim(cols = `parent levels`,delim = &quot; | &quot;) %&gt;% 
+  select(-`Lab ID`) %&gt;% 
+  pivot_longer(!all_of(c(&quot;Compound ID&quot;,&quot;Compound name&quot;)),names_to = &quot;levels&quot;,values_to = &quot;NAME&quot;) %&gt;% 
+  filter(!is.na(NAME))
+  
+##&gt; construct database
+TERM2NAME = 
+  class2 %&gt;% 
+  select(NAME) %&gt;% 
+  distinct() %&gt;% 
+  mutate(TERM = paste0(&quot;MC:&quot;,str_pad(c(1:nrow(.)),5,&quot;left&quot;,&#39;0&#39;))) %&gt;% 
+  filter(NAME != &quot;NA&quot;) %&gt;% 
+  select(TERM,NAME)
+
+TERM2COM = 
+  class2 %&gt;% 
+  left_join(TERM2NAME) %&gt;% 
+  select(TERM,`Compound ID`) %&gt;% 
+  setNames(c(&quot;TERM&quot;,&quot;COMPOUND&quot;)) %&gt;% 
+  distinct()
+
+writexl::write_xlsx(list(
+  db = class2,
+  TERM2NAME = TERM2NAME,
+  TERM2COM = TERM2COM
+),path = &quot;02.DemoData/classyfire_database.xlsx&quot;)
+
+##&gt; enrichment
+
+library(clusterProfiler)
+
+res.class &lt;- enricher(
+  gene = test_c,pvalueCutoff = 1,
+  qvalueCutoff = 1,
+  TERM2GENE = TERM2COM,
+  TERM2NAME = TERM2NAME
+)
+
+dotplot(res.class,showCategory = 15) 
+enrichplot::cnetplot(res.class)
+
+res.sim &lt;- enrichplot::pairwise_termsim(res.class)
+
+enrichplot::emapplot(res.sim)</code></pre>
+<p><strong>Complete DAM analysis pipeline</strong></p>
+<p>We have developed a streamlined, one-step workflow tailored for
+paired DAM analyses. This comprehensive process encompasses differential
+analysis, volcano plot generation, PCA, heatmap construction, and KEGG
+enrichment analysis. Once the enrichment analysis is completed, we
+proceed by extracting the metabolites from significantly enriched
+pathways amidst the differential metabolites, followed by their
+visualization in a heatmap. This notably enhances the ease and
+efficiency of data mining within our enrichment analysis results. <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/run_DAM_analysis.R">run_DAM_analysis.R</a></p>
+<pre class="bash"><code>    Rscript run_DAM_analysis_v3.R  \
+        --peakfile expmat.txt \
+        --group group.txt \
+        --meta_anno annotation.txt \ # must have compound_id compound_name and KEGG.ID 
+        --kegg_db ath_kegg.rds \
+        --left &quot;left&quot; \
+        --right &#39;right&#39; \
+        --VIP 1 \
+        --pvalue 0.05 \
+        --qvalue 1 \
+        --log2fc 0.26 \
+    --test.method &quot;t-test&quot; \
+    --pls.method &quot;pls-da&quot;</code></pre>
+<p>group file:</p>
+<table>
+<thead>
+<tr class="header">
+<th>group</th>
+<th>sample_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>left</td>
+<td>s_01</td>
+</tr>
+<tr class="even">
+<td>left</td>
+<td>s_02</td>
+</tr>
+<tr class="odd">
+<td>left</td>
+<td>s_03</td>
+</tr>
+<tr class="even">
+<td>right</td>
+<td>s_04</td>
+</tr>
+<tr class="odd">
+<td>right</td>
+<td>s_05</td>
+</tr>
+<tr class="even">
+<td>right</td>
+<td>s_06</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="reference" class="section level2">
 <h2>Reference</h2>
