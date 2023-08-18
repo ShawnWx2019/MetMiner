@@ -796,4 +796,4 @@ writexl::write_xlsx(list(annotation = ori_vari_info,TQMS_method = MRM_method),"w
 
 save.image(paste0("workdir/",Sys.time() %>% str_replace_all("-|:| ","_"),".rda"))
 
-#load("workdir/2023_07_16_09_54_55.035713.rda")
+
