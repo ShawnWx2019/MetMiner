@@ -24,8 +24,10 @@ command=matrix(c(
   'help', 'h', 0, 'logic', 'help information',
   'expmat', 'e', 1, 'character', 'File Path of MS1". ',
   'sample_info', 's', 1, 'character','sample information',
+  'color_by','c',1, 'In PCA biplot, samples will be colored by which column in sample_info',
+  'dimension','d',0,'how many dimentions will be used to generate PCA biplot | 2 or 3 ',
   'heterogeneous', 'g', 1, 'character', "yes or no",
-  'norm_method','n',1,'character','normalization method: knn,serrf,total,median,mean,pqn,loess'
+  'norm_method','n',1,'character','normalization method: svr,serrf,total,median,mean,pqn,loess'
 ),byrow = T, ncol = 5)
 args = getopt(command)
 
@@ -50,6 +52,14 @@ if (is.null(args$heterogeneous)){
   args$heterogeneous = 'no'
 }
 
+if (is.null(args$color_by)){
+  args$color_by = 'group'
+}
+
+if (is.null(args$dimension)){
+  args$dimension = 2
+}
+
 if (is.null(args$norm_method)){
   args$norm_method = 'svr'
 }
@@ -60,11 +70,15 @@ if (TEST == "TRUE") {
   T.sample_info = "02.DemoData/sample_info_v2.csv";
   T.norm_method = "serrf"
   heterogeneous = 'yes'
+  color_by = 'group'
+  dimension = 2
 } else {
   T.expmat = args$expmat;
   T.sample_info = args$sample_info;
   T.norm_method = args$norm_method
   heterogeneous = args$heterogeneous
+  color_by = args$color_by
+  dimension = args$dimension
 }
 
 library(tidymass)
@@ -239,14 +253,22 @@ dir.create("workdir2/02.normalized/")
 save(object.norm,file = "workdir2/02.normalized/object.norm.rds")
 plt.rsd <- IMO_plt_rsd(obj_old = object.imput,obj_new = object.norm,QC_tag = "QC")
 ggsave(filename = "workdir2/02.normalized/rsd.pdf",plot = plt.rsd$plot,width = 10,height = 9.5)
-pca_new <- IMO_plt_pca(obj = object.norm,tag = "group",center = T,scale = T,removeVar = .1,interactive = F)
-pca_old <- IMO_plt_pca(obj = object.imput,tag = "group",center = T,scale = T,removeVar = .1,interactive = F)
 
-pca_plt <- pca_old$plot + ggtitle("before")+theme(plot.title = element_text(hjust = .5)) +
-  pca_new$plot +ggtitle("after")+theme(plot.title = element_text(hjust = .5))+
-  plot_annotation(tag_levels = "A")
+# pca ---------------------------------------------------------------------
 
-ggsave(filename = "workdir2/02.normalized/pca.pdf",plot = pca_plt,width = 10,height = 7)
+pca_new <- IMO_plt_pca(obj = object.norm,tag = color_by,center = T,scale = T,removeVar = .1,interactive = F)
+pca_old <- IMO_plt_pca(obj = object.imput,tag = color_by,center = T,scale = T,removeVar = .1,interactive = F)
+
+if(dimension == 2) {
+  pca_plt <- pca_old$plot + ggtitle("before")+theme(plot.title = element_text(hjust = .5)) +
+    pca_new$plot +ggtitle("after")+theme(plot.title = element_text(hjust = .5))+
+    plot_annotation(tag_levels = "A")
+  
+  ggsave(filename = "workdir2/02.normalized/pca.pdf",plot = pca_plt,width = 10,height = 7)
+} else if (dimension == 3) {
+  
+}
+
 
 norm_expmat <- object.norm %>% 
   extract_expression_data() %>% 

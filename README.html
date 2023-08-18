@@ -358,7 +358,10 @@ display: none;
 <a href="https://shawnwx2019.github.io/"><img src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IkJsb2c6IFNoYW53TGVhcm5CaW9pbmZvIj48dGl0bGU+QmxvZzogU2hhbndMZWFybkJpb2luZm88L3RpdGxlPjxsaW5lYXJHcmFkaWVudCBpZD0icyIgeDI9IjAiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNiYmIiIHN0b3Atb3BhY2l0eT0iLjEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3Atb3BhY2l0eT0iLjEiLz48L2xpbmVhckdyYWRpZW50PjxjbGlwUGF0aCBpZD0iciI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMCIgcng9IjMiIGZpbGw9IiNmZmYiLz48L2NsaXBQYXRoPjxnIGNsaXAtcGF0aD0idXJsKCNyKSI+PHJlY3Qgd2lkdGg9IjM1IiBoZWlnaHQ9IjIwIiBmaWxsPSIjNTU1Ii8+PHJlY3QgeD0iMzUiIHdpZHRoPSIxMTUiIGhlaWdodD0iMjAiIGZpbGw9InB1cnBsZSIvPjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iMjAiIGZpbGw9InVybCgjcykiLz48L2c+PGcgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IlZlcmRhbmEsR2VuZXZhLERlamFWdSBTYW5zLHNhbnMtc2VyaWYiIHRleHQtcmVuZGVyaW5nPSJnZW9tZXRyaWNQcmVjaXNpb24iIGZvbnQtc2l6ZT0iMTEwIj48dGV4dCBhcmlhLWhpZGRlbj0idHJ1ZSIgeD0iMTg1IiB5PSIxNTAiIGZpbGw9IiMwMTAxMDEiIGZpbGwtb3BhY2l0eT0iLjMiIHRyYW5zZm9ybT0ic2NhbGUoLjEpIiB0ZXh0TGVuZ3RoPSIyNTAiPkJsb2c8L3RleHQ+PHRleHQgeD0iMTg1IiB5PSIxNDAiIHRyYW5zZm9ybT0ic2NhbGUoLjEpIiBmaWxsPSIjZmZmIiB0ZXh0TGVuZ3RoPSIyNTAiPkJsb2c8L3RleHQ+PHRleHQgYXJpYS1oaWRkZW49InRydWUiIHg9IjkxNSIgeT0iMTUwIiBmaWxsPSIjMDEwMTAxIiBmaWxsLW9wYWNpdHk9Ii4zIiB0cmFuc2Zvcm09InNjYWxlKC4xKSIgdGV4dExlbmd0aD0iMTA1MCI+U2hhbndMZWFybkJpb2luZm88L3RleHQ+PHRleHQgeD0iOTE1IiB5PSIxNDAiIHRyYW5zZm9ybT0ic2NhbGUoLjEpIiBmaWxsPSIjZmZmIiB0ZXh0TGVuZ3RoPSIxMDUwIj5TaGFud0xlYXJuQmlvaW5mbzwvdGV4dD48L2c+PC9zdmc+" alt="Myblog" /></a></p>
 <p>An Integrated Pipeline for Large-Scale Metabolomics Data Processing
 and Data Mining.</p>
-<p><img src="%2204.www/Figure1.png%22" /></p>
+<div class="float">
+<img src="https://github.com/ShawnWx2019/MetMiner/blob/main/04.www/Figure1.png" alt="Figure1" />
+<div class="figcaption">Figure1</div>
+</div>
 </div>
 <div id="getting-started" class="section level1">
 <h1>Getting started</h1>
@@ -374,7 +377,7 @@ need to be tested.</em></p>
 <div id="dependence" class="section level1">
 <h1>Dependence</h1>
 <p>LC-MS data analysis framwork: <a href="https://www.tidymass.org/"><strong>TidyMass</strong></a> developed
-by <a href="https://www.shenxt.info/">Dr. Xiaotao Shen</a>. <a href="#refer-anchor-1"><span class="citation">@Citation</span></a></p>
+by <a href="https://www.shenxt.info/">Dr. Xiaotao Shen</a>. <a href="#refer-anchor-1">@Citation</a></p>
 <pre class="r"><code>if(!require(remotes)){
 install.packages(&quot;remotes&quot;)
 }
@@ -764,8 +767,8 @@ handlers(handler_pbcol(
 bna_kegg_db &lt;- mda_make_keggdb(organism = &#39;bna&#39;)
 ##&gt; save the long-time used bna kegg database.
 save(bna_kegg_db,file = &quot;03.Document/bna_kegg_db.rda&quot;)</code></pre>
-<p>Second, 、 acquire the corresponding KEGG CID for the compounds
-through databases like KEGG, <a href="http://cts.fiehnlab.ucdavis.edu/batch">CTS</a>, etc. We can
+<p>Second, acquire the corresponding KEGG CID for the compounds through
+databases like KEGG, <a href="http://cts.fiehnlab.ucdavis.edu/batch">CTS</a>, etc. We can
 accomplish the automated conversion by using
 <code>MDAtoolkits::mda_name2kegg &amp; MDAtoolkits::CTS_kegg</code>.</p>
 <pre class="r"><code>##&gt; import annotation result
@@ -875,10 +878,10 @@ proceed by extracting the metabolites from significantly enriched
 pathways amidst the differential metabolites, followed by their
 visualization in a heatmap. This notably enhances the ease and
 efficiency of data mining within our enrichment analysis results. <a href="https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/run_DAM_analysis.R">run_DAM_analysis.R</a></p>
-<pre class="bash"><code>    Rscript run_DAM_analysis_v3.R  \
+<pre class="bash"><code>Rscript run_DAM_analysis.R \
         --peakfile expmat.txt \
         --group group.txt \
-        --meta_anno annotation.txt \ # must have compound_id compound_name and KEGG.ID 
+        --meta_anno annotation.txt \# must have compound_id compound_name and KEGG.ID 
         --kegg_db ath_kegg.rds \
         --left &quot;left&quot; \
         --right &#39;right&#39; \
@@ -886,8 +889,8 @@ efficiency of data mining within our enrichment analysis results. <a href="https
         --pvalue 0.05 \
         --qvalue 1 \
         --log2fc 0.26 \
-    --test.method &quot;t-test&quot; \
-    --pls.method &quot;pls-da&quot;</code></pre>
+        --test.method &quot;t-test&quot; \
+        --pls.method &quot;pls-da&quot;</code></pre>
 <p>group file:</p>
 <table>
 <thead>
@@ -960,30 +963,29 @@ ShinyWGCNA::oneStepWGCNA(
   save_fig = T,
   F.path = &quot;workdir3/&quot;,
   datatype = &quot;peak area&quot;,r_cutoff = 0.15
-)
-</code></pre>
+)</code></pre>
 </div>
 <div id="reference" class="section level2">
 <h2>Reference</h2>
-<div id="id_#refer-anchor-1">
+<div class="{##refer-anchor-1}">
 <ol style="list-style-type: decimal">
 <li>Shen, X., Yan, H., Wang, C., Gao, P., Johnson, C.H. &amp; Snyder,
 M.P. (2022) TidyMass an object-oriented reproducible analysis framework
 for LC–MS data. Nature Communications, 13, 4365. DOI: <a href="https://www.nature.com/articles/s41467-022-32155-w">https://doi.org/10.1038/s41467-022-32155-w</a></li>
 </ol>
 </div>
-<div id="id_#refer-anchor-2">
+<div class="{##refer-anchor-2}">
 <ol start="2" style="list-style-type: decimal">
 <li>Djoumbou Feunang, Y., Eisner, R., Knox, C., et al. (2016)
 ClassyFire: automated chemical classification with a comprehensive,
-computable taxonomy. Journal of Cheminformatics, 8, 61. DOI: <a href="https://doi.org/10.1186/s13321-016-0174-y">https://doi.org/10.1186/s13321-016-0174-y</a></li>
+computable taxonomy. Journal of Cheminformatics, 8, 61. DOI: <a href="https://doi.org/10.1186/s13321-016-0174-y" class="uri">https://doi.org/10.1186/s13321-016-0174-y</a></li>
 </ol>
 </div>
-<div id="id_#refer-anchor-3">
+<div class="{##refer-anchor-3}">
 <ol start="3" style="list-style-type: decimal">
 <li>Szöcs E, Stirling T, Scott ER, et al. (2020) webchem: An R Package
 to retrieve chemical information from the web. Journal of statistical
-software 93:. DOI: <a href="https://doi.org/10.18637/jss.v093.i13">https://doi.org/10.18637/jss.v093.i13</a></li>
+software 93:. DOI: <a href="https://doi.org/10.18637/jss.v093.i13" class="uri">https://doi.org/10.18637/jss.v093.i13</a></li>
 </ol>
 </div>
 </div>
