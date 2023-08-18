@@ -20,7 +20,7 @@ OS: `MacOS > 10.10`, `Win 7-11`, `Ubuntu 20.04`
 
 # Dependence
 
-LC-MS data analysis framwork: [**TidyMass**](https://www.tidymass.org/) developed by [Dr. Xiaotao Shen](https://www.shenxt.info/). [\@Citation](#refer-anchor-1)
+LC-MS data analysis framwork: [**TidyMass**](https://www.tidymass.org/) developed by [Dr. Xiaotao Shen](https://www.shenxt.info/). [^1]
 
 ``` r
 if(!require(remotes)){
@@ -217,13 +217,13 @@ In addition, for large-scale metabolomics data, the swift, efficient, and accura
 
 **Compound classification**
 
-ClassyFire is a comprehensive, flexible, and computable, purely structure-based chemical taxonomy (ChemOnt), developed by chemists, along with a computer program (ClassyFire) that uses only chemical structures and structural features to automatically assign all known chemical compounds to a taxonomy consisting of more than 4800 different categories [Djoumbou et.al](#refer-anchor-2).
+ClassyFire is a comprehensive, flexible, and computable, purely structure-based chemical taxonomy (ChemOnt), developed by chemists, along with a computer program (ClassyFire) that uses only chemical structures and structural features to automatically assign all known chemical compounds to a taxonomy consisting of more than 4800 different categories [^2].
 
 The ClassyFire database facilitates the retrieval of compound classifications by utilizing the compound's unique InChIKey. We generally execute batch conversions of metabolites using the [ClassyFire Batch by Fiehn Lab (cbf)](https://cfb.fiehnlab.ucdavis.edu/#/). Although some local databases offer corresponding InChIKeys for their compounds, a majority do not. For these unaccommodated metabolites, we must first procure the InChIKey from PubChem using the compound's name, then subsequently obtain the classification data via the CBF.
 
 To streamline this process, we've developed a series of web crawler scripts to fetch the information. The functions are as follows:
 
-1.  `MDAtoolkits::mda_get_cid & MDAtoolkits::mda_pubchem_crawler`, convert compound name to pubchem cid and InChIKey via [webchem package](https://github.com/ropensci/webchem) [Szöcs E et.al](#refer-anchor-3).
+1.  `MDAtoolkits::mda_get_cid & MDAtoolkits::mda_pubchem_crawler`, convert compound name to pubchem cid and InChIKey via [webchem package](https://github.com/ropensci/webchem) [^3].
 
 2.  `MDAtoolkits::mda_get_cid_fast`, convert compound name to pubchem InChIKey via [PUG REST](https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest). **[Recommend]**
 
@@ -444,14 +444,14 @@ ShinyWGCNA::oneStepWGCNA(
 
 ## Reference
 
-::: {##refer-anchor-1}
-1.  Shen, X., Yan, H., Wang, C., Gao, P., Johnson, C.H. & Snyder, M.P. (2022) TidyMass an object-oriented reproducible analysis framework for LC--MS data. Nature Communications, 13, 4365. DOI: [https://doi.org/10.1038/s41467-022-32155-w](https://www.nature.com/articles/s41467-022-32155-w)
-:::
 
-::: {##refer-anchor-2}
-2.  Djoumbou Feunang, Y., Eisner, R., Knox, C., et al. (2016) ClassyFire: automated chemical classification with a comprehensive, computable taxonomy. Journal of Cheminformatics, 8, 61. DOI: <https://doi.org/10.1186/s13321-016-0174-y>
-:::
+[^1]: Shen, X., Yan, H., Wang, C., Gao, P., Johnson, C.H. & Snyder, M.P. (2022) TidyMass an object-oriented reproducible analysis framework for LC--MS data. Nature Communications, 13, 4365. DOI: [https://doi.org/10.1038/s41467-022-32155-w](https://www.nature.com/articles/s41467-022-32155-w)
 
-::: {##refer-anchor-3}
-3.  Szöcs E, Stirling T, Scott ER, et al. (2020) webchem: An R Package to retrieve chemical information from the web. Journal of statistical software 93:. DOI: <https://doi.org/10.18637/jss.v093.i13>
-:::
+
+
+[^2]: Djoumbou Feunang, Y., Eisner, R., Knox, C., et al. (2016) ClassyFire: automated chemical classification with a comprehensive, computable taxonomy. Journal of Cheminformatics, 8, 61. DOI: <https://doi.org/10.1186/s13321-016-0174-y>
+
+
+
+[^3]: Szöcs E, Stirling T, Scott ER, et al. (2020) webchem: An R Package to retrieve chemical information from the web. Journal of statistical software 93:. DOI: <https://doi.org/10.18637/jss.v093.i13>
+
