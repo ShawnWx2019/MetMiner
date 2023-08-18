@@ -16,7 +16,8 @@ R version: `>4.1.1`
 
 OS: `MacOS > 10.10`, `Win 7-11`, `Ubuntu 20.04`
 
-*Only Ubuntu 20.04 has passed the test. Other Linux distributions need to be tested.*
+> [!WARNING]
+> Only Ubuntu 20.04 has passed the test. Other Linux distributions need to be tested.
 
 # Dependence
 
@@ -52,8 +53,8 @@ cd HPC_tidymass && chmod +x init.sh && bash init.sh
 ##> test
 hpc-runTidymass -h
 ```
-
-A user-friendly WGCNA Shiny app: [**WGCNA-shinyApp**](https://github.com/ShawnWx2019/WGCNA-shinyApp) follow the steps of [WGCNA-shinyapp readme file](https://github.com/ShawnWx2019/WGCNA-shinyApp/blob/main/README.md)
+> [!IMPORTANT]
+> A user-friendly WGCNA Shiny app: [**WGCNA-shinyApp**](https://github.com/ShawnWx2019/WGCNA-shinyApp) follow the steps of [WGCNA-shinyapp readme file](https://github.com/ShawnWx2019/WGCNA-shinyApp/blob/main/README.md)
 
 # Step 1. Upstream analysis
 
@@ -194,9 +195,9 @@ After exploring various options, we chose to use tidyMass to complete the full p
 > [!NOTE] 
 > To use this HPC-tidymass, several conditions must be met:
 
-1.  The user must be added to the Docker group, as the initial format conversion relies on MSconvert within Docker.
-2.  The naming convention for original files: QC as `QC_001`, sample as `S_0001`, with zeros used to pad the digit length.
-3.  When using the script, the absolute path must be used for the original file path, as Docker only recognizes absolute paths when running.
+> 1.  The user must be added to the Docker group, as the initial format conversion relies on MSconvert within Docker.
+> 2.  The naming convention for original files: QC as `QC_001`, sample as `S_0001`, with zeros used to pad the digit length.
+> 3.  When using the script, the absolute path must be used for the original file path, as Docker only recognizes absolute paths when running.
 
 ``` bash
 ##> run
@@ -225,7 +226,8 @@ ClassyFire is a comprehensive, flexible, and computable, purely structure-based 
 
 The ClassyFire database facilitates the retrieval of compound classifications by utilizing the compound's unique InChIKey. We generally execute batch conversions of metabolites using the [ClassyFire Batch by Fiehn Lab (cbf)](https://cfb.fiehnlab.ucdavis.edu/#/). Although some local databases offer corresponding InChIKeys for their compounds, a majority do not. For these unaccommodated metabolites, we must first procure the InChIKey from PubChem using the compound's name, then subsequently obtain the classification data via the CBF.
 
-To streamline this process, we've developed a series of web crawler scripts to fetch the information. The functions are as follows:
+> [!IMPORTANT]
+> To streamline this process, we've developed a series of web crawler scripts to fetch the information. The functions are as follows:
 
 1.  `MDAtoolkits::mda_get_cid & MDAtoolkits::mda_pubchem_crawler`, convert compound name to pubchem cid and InChIKey via [webchem package](https://github.com/ropensci/webchem) [^3].
 
@@ -285,6 +287,9 @@ save(bna_kegg_db,file = "03.Document/bna_kegg_db.rda")
 ```
 
 Second, acquire the corresponding KEGG CID for the compounds through databases like KEGG, [CTS](http://cts.fiehnlab.ucdavis.edu/batch), etc. We can accomplish the automated conversion by using `MDAtoolkits::mda_name2kegg & MDAtoolkits::CTS_kegg`.
+
+> [!NOTE] 
+> Sometimes, we have noticed that the CTS website can experience information loss. In the case of KEGG database CID matching based on web-crawling, incomplete matches can occur. Therefore, for compounds with uncertainties, it's advisable to manually search and verify on the KEGG website.
 
 ``` r
 ##> import annotation result
@@ -446,6 +451,11 @@ ShinyWGCNA::oneStepWGCNA(
   datatype = "peak area",r_cutoff = 0.15
 )
 ```
+## TODO List
+
+- [ ] Development of a user-friendly Shiny app for LC-MS upstream data analysis based on tidymass.  
+
+- [ ] Development of a Shiny app for downstream untargeted metabolomics data analysis and visualization.
 
 ## Reference
 
