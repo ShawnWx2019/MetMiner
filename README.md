@@ -173,7 +173,9 @@ For LC-MS data processed by Compound Discoverer (CD) or other software, you firs
 
 After acquiring the TQMS method, we proceed to perform quantitative detection on all samples. Once the quantitative results are obtained, we can construct a mass_dataset following the steps outlined on the tidymass official website. This allows us to carry out subsequent data cleaning and standardization. Alternatively, you can use the Rscript: [PresMetaboDataCleaning.R](https://github.com/ShawnWx2019/MetMiner/blob/main/01.Src/PresMetaboDataCleaning.R) to conduct a one-step data processing, directly yielding a standardized expression matrix, as well as the feature RSD and PCA results both before and after standardization. Results as [workdir2](https://github.com/ShawnWx2019/MetMiner/blob/main/workdir2/)
 
-**NOTICE：** When using the script for data cleaning, one important aspect to pay attention to is the removal of outliers. In metabolomics experiments involving heterogeneous samples (encompassing different tissues or species), substantial differences between samples can lead to a high proportion of missing values. Some of these might be mistakenly identified and removed as outliers. Therefore, when processing data that includes different tissues or species, add the `-g | --heterogeneous 'yes'` parameter. In addition, if your QC samples have been concentrated, they could also be erroneously removed as outliers. In such a case, it would be necessary to include the `-g | --heterogeneous ' yes` parameter as well. Additionally, if discrepancies exist among your samples, modifications to the script will be required. For example, in our study, we have randomly incorporated seven col-0 into the mutants, setting our filtering parameters at QC \< 0.2, WT \< 0.2, and MT \< 0.5. The results within workdir2 were generated using default parameters, specifically applying only QC \< 0.2. Consequently, the quantity of metabolites identified significantly exceeded the final count of metabolites selected in the publication.
+> [!NOTE]
+
+>When using the script for data cleaning, one important aspect to pay attention to is the removal of outliers. In metabolomics experiments involving heterogeneous samples (encompassing different tissues or species), substantial differences between samples can lead to a high proportion of missing values. Some of these might be mistakenly identified and removed as outliers. Therefore, when processing data that includes different tissues or species, add the `-g | --heterogeneous 'yes'` parameter. In addition, if your QC samples have been concentrated, they could also be erroneously removed as outliers. In such a case, it would be necessary to include the `-g | --heterogeneous ' yes` parameter as well. Additionally, if discrepancies exist among your samples, modifications to the script will be required. For example, in our study, we have randomly incorporated seven col-0 into the mutants, setting our filtering parameters at QC \< 0.2, WT \< 0.2, and MT \< 0.5. The results within workdir2 were generated using default parameters, specifically applying only QC \< 0.2. Consequently, the quantity of metabolites identified significantly exceeded the final count of metabolites selected in the publication.
 
 ``` bash
  Rscript 01.Src/PresMetaboDataCleaining.R \
@@ -189,7 +191,8 @@ When analyzing large-scale untargeted metabolomics data, peak picking and librar
 
 After exploring various options, we chose to use tidyMass to complete the full process from data format conversion to peak picking, data cleaning, and metabolite annotation for large-scale untargeted metabolomics upstream data analysis. To facilitate usage on server-side, we have also set up an analysis workflow known as HPC-tidyMass.
 
-**NOTIC:** To use this HPC-tidymass, several conditions must be met:
+> [!NOTE] 
+> To use this HPC-tidymass, several conditions must be met:
 
 1.  The user must be added to the Docker group, as the initial format conversion relies on MSconvert within Docker.
 2.  The naming convention for original files: QC as `QC_001`, sample as `S_0001`, with zeros used to pad the digit length.
@@ -205,7 +208,8 @@ runTidymass \
 
 when runTidymass finish, all files, including original data and format-converted files such as .mzXML and .mgf, can be found in the `working_dir` directory. This also includes all mass_datasets produced from the peak picking to data normalization steps, as well as the mass_datasets which contains feature annotation. Moreover, in order to best retain the annotation results, we've categorized the annotation outcomes into four types. The first one is the unfiltered original annotation file, named `Original_annotation`. The second is the result after redundancy removal from the metabolites, named `rm_redundant`. The third type, `Only_MS2`, retains only the features that match with the database via MS2. The third category often has higher confidence; however, due to the limitations of the metabolites annotated in the database, many metabolites could be filtered out, particularly in plant materials abundant in secondary metabolites.
 
-**NOTIC:** The script has a mechanism in place for checkpoint resumption, which is useful when encountering errors. When an error arises, identify its cause, then check the result files in the `working_dir` to see if they are complete. If they are not, remove the corresponding result directory and rerun the script.
+> [!NOTE]
+> The script has a mechanism in place for checkpoint resumption, which is useful when encountering errors. When an error arises, identify its cause, then check the result files in the `working_dir` to see if they are complete. If they are not, remove the corresponding result directory and rerun the script.
 
 # Step 2. Downstream Analysis
 
@@ -231,7 +235,8 @@ To streamline this process, we've developed a series of web crawler scripts to f
 
 4.  `MDAtoolkits::cbf_crawler`, convert InChIKey to classyfire data via [cbf api](https://cfb.fiehnlab.ucdavis.edu/). **[Recommend]**
 
-**NOTICE** We propose that metabolite classification analysis be performed directly on the database, and that the classification information be incorporated into the database during its construction. We have already carried out classification analyses on the Arabidopsis Thaliana Knapsack and KEGG databases, embedding the classification data within them. Going forward, we will complete the classification annotations for other database.
+> [!NOTE] 
+> We propose that metabolite classification analysis be performed directly on the database, and that the classification information be incorporated into the database during its construction. We have already carried out classification analyses on the Arabidopsis Thaliana Knapsack and KEGG databases, embedding the classification data within them. Going forward, we will complete the classification annotations for other database.
 
 **Different Accumulation Metabolites Analysis (DAM analysis)**
 
