@@ -314,9 +314,10 @@ dam_res_server <- function(id,volumes,prj_init,data_clean_rv,data_download) {
       {
         if(!is.null(prj_init$object_positive.init) & prj_init$steps == "DAM and rest"){
           p3_DAM$object_merge = prj_init$object_positive.init;
-        } else {
-          if(is.null(data_clean_rv$object_merge)){return()}
+        } else if(!is.null(data_clean_rv$object_merge)){
           p3_DAM$object_merge = data_clean_rv$object_merge
+        } else {
+          return()
         }
         p3_DAM$Group_method = input$dam_method_picksample %>% as.character()
 

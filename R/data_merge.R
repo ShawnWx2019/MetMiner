@@ -142,17 +142,7 @@ data_merge_ui <- function(id) {
               jqui_resizable(
                 plotOutput(ns("merge_corr"))
               ),
-            ),
-            # tabPanel(
-            #   title = 'Status',height = '500px',width = "100%",
-            #   icon = icon('r-project'),
-            #   tags$h3("Export file check",style = 'color: #008080'),
-            #   hr_main(),
-            #   htmlOutput(ns("peak_result_path")),
-            #   tags$h3("status",style = 'color: #008080'),
-            #   hr_main(),
-            #   verbatimTextOutput(ns("data_merge_object"))
-            # ),
+            )
           )
         )
       )
@@ -286,7 +276,7 @@ data_merge_server <- function(id,volumes,prj_init,data_clean_rv) {
         ##> annotation info
         p2_data_merge$anno_table <-
           p2_data_merge$object_merge %>%
-          extract_annotation_table()
+          extract_annotation_table() %>% dplyr::filter(filter_tag_addcut == 'retain')
 
         output$data_merge_annotation = renderDataTable_formated(
           actions = input$data_merge_show,

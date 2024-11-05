@@ -89,7 +89,7 @@ annotation_filter_ui <- function(id) {
                        radioButtons(
                          inputId = ns("feature_remove"),
                          label = "Method",
-                         choices = c("Only annotated features","Only features with MS2 spectra","Both"),
+                         choices = c("Only annotated features","Only features with MS2 spectra","Both","Keep unknown features"),
                          selected = "Both"
                        ),
           )# sidebarPanel
@@ -286,7 +286,7 @@ annotation_filter_server <- function(id,volumes,prj_init,data_clean_rv,data_down
 
         ##> addcut filtring
         ##> pos
-        p2_af_filter$object_pos_temp.af <-
+        p2_af_filter$object_pos.anno <-
           p2_af_filter$object_pos.anno %>%
           activate_mass_dataset("annotation_table") %>%
           mutate(filter_tag_addcut =
@@ -297,7 +297,7 @@ annotation_filter_server <- function(id,volumes,prj_init,data_clean_rv,data_down
                    )
           )
         ##> neg
-        p2_af_filter$object_neg_temp.af <-
+        p2_af_filter$object_neg.anno  <-
           p2_af_filter$object_neg.anno %>%
           activate_mass_dataset("annotation_table") %>%
           mutate(filter_tag_addcut =
@@ -307,6 +307,9 @@ annotation_filter_server <- function(id,volumes,prj_init,data_clean_rv,data_down
                      TRUE ~ "remove"
                    )
           )
+        ##> add tags
+        p2_af_filter$object_pos_temp.af <- p2_af_filter$object_pos.anno
+        p2_af_filter$object_neg_temp.af <- p2_af_filter$object_neg.anno
 
         ##> Annotation cleaning for multi-matched annotation
         if(p2_af_filter$af_multi_anno == "keep top total score") {
@@ -355,25 +358,17 @@ annotation_filter_server <- function(id,volumes,prj_init,data_clean_rv,data_down
             group_by(Compound.name.fix) %>%
             slice_head(n = 1)
         }
-        # ##> Keep all or remove compounds only have MS1 annotation.
-        # if(p2_af_filter$af_levels == "keep level 1 and 2 only") {
-        #   p2_af_filter$object_neg_temp.af =
-        #     p2_af_filter$object_neg_temp.af %>%
-        #     activate_mass_dataset("annotation_table") %>%
-        #     filter(Level == 1 | Level == 2)
-        #   p2_af_filter$object_pos_temp.af =
-        #     p2_af_filter$object_pos_temp.af %>%
-        #     activate_mass_dataset("annotation_table") %>%
-        #     filter(Level == 1 | Level == 2)
-        # }
+
         ##> plot
         p2_af_filter$pos_clean_anno =
           p2_af_filter$object_pos_temp.af %>%
-          extract_annotation_table()
+          extract_annotation_table() %>%
+          filter(filter_tag_addcut == "retain")
 
         p2_af_filter$neg_clean_anno =
           p2_af_filter$object_neg_temp.af %>%
-          extract_annotation_table()
+          extract_annotation_table() %>%
+          filter(filter_tag_addcut == "retain")
 
         p2_af_filter$pos_var_id =
           p2_af_filter$pos_clean_anno %>%
@@ -434,6 +429,9 @@ annotation_filter_server <- function(id,volumes,prj_init,data_clean_rv,data_down
         } else if(p2_af_filter$feature_remove == "Only annotated features") {
           p2_af_filter$object_neg.af = filter_annotations_massdataset(object = p2_af_filter$object_neg.anno,annotate_tbl = temp_anno.neg,method = 'only annotation')
           p2_af_filter$object_pos.af = filter_annotations_massdataset(object = p2_af_filter$object_pos.anno,annotate_tbl = temp_anno.pos,method = 'only annotation')
+        } else if(p2_af_filter$feature_remove == "Keep unknown features"){
+          p2_af_filter$object_neg.af = p2_af_filter$object_neg_temp.af
+          p2_af_filter$object_pos.af = p2_af_filter$object_pos_temp.af
         }
 
         data_clean_rv$object_neg.af = p2_af_filter$object_neg.af
@@ -443,142 +441,145 @@ annotation_filter_server <- function(id,volumes,prj_init,data_clean_rv,data_down
           polarity = 'positive',
           file_path = paste0(prj_init$wd,"/Result/POS/Objects/"),
           stage = 'af',
-          obj = p2_af_filter$object_pos_temp.af)
+          obj = data_clean_rv$object_pos.af)
 
         save_massobj(
           polarity = 'negative',
           file_path = paste0(prj_init$wd,"/Result/NEG/Objects/"),
           stage = 'af',
-          obj = p2_af_filter$object_neg_temp.af)
+          obj = data_clean_rv$object_neg.af)
 
         ##> status
         output$object_pos.af = renderPrint({
-          print(p2_af_filter$object_pos_temp.af)
+          print(data_clean_rv$object_pos.af)
         })
         output$object_neg.af = renderPrint({
-          print(p2_af_filter$object_neg_temp.af)
+          print(data_clean_rv$object_neg.af)
         })
       }
 
     )
 
-    observeEvent(input$af_pos_show_plot,
-                 {
-                   if(is.null(p2_af_filter$object_pos_temp.af)){return()}
-                   if(is.null(p2_af_filter$pos_clean_anno)){return()}
-                   #> plot pos
-                   ##>
+    observeEvent(input$af_pos_show_plot, {
+      tryCatch({
+        if (is.null(p2_af_filter$object_pos_temp.af)) {
+          return()
+        }
+        if (is.null(p2_af_filter$pos_clean_anno)) {
+          return()
+        }
 
-                   show_mz = input$show_mz
-                   if(show_mz == "TRUE") {show_mz = TRUE} else {show_mz = FALSE}
-                   show_detail = input$show_detail
-                   if(show_detail == "TRUE") {show_detail = TRUE} else {show_detail = FALSE}
+        # plot pos
+        show_mz = input$show_mz
+        if (show_mz == "TRUE") { show_mz = TRUE } else { show_mz = FALSE }
+        show_detail = input$show_detail
+        if (show_detail == "TRUE") { show_detail = TRUE } else { show_detail = FALSE }
 
-                   ##> get index
-                   af_pos_row_idx = input$af_pos_ms2_tbl_rows_selected
-                   ##> extract infor
-                   af_pos_row = p2_af_filter$temp_af_pos_tbl[af_pos_row_idx,]
-                   p2_af_filter$pos_vari_id = af_pos_row[[1]]
-                   p2_af_filter$pos_db_name = af_pos_row[[4]]
+        # get index
+        af_pos_row_idx = input$af_pos_ms2_tbl_rows_selected
+        # extract info
+        af_pos_row = p2_af_filter$temp_af_pos_tbl[af_pos_row_idx, ]
+        p2_af_filter$pos_vari_id = af_pos_row[[1]]
+        p2_af_filter$pos_db_name = af_pos_row[[4]]
 
-                   temp_idx.pos = match(p2_af_filter$pos_db_name,p2_af_filter$db.name)
-                   temp_db.pos = p2_af_filter$dblist[[temp_idx.pos]]
-                   ##> plot
+        temp_idx.pos = match(p2_af_filter$pos_db_name, p2_af_filter$db.name)
+        temp_db.pos = p2_af_filter$dblist[[temp_idx.pos]]
 
-                   p2_af_filter$temp_ms2_match.pos = ms2_plot_mass_dataset_mz(
-                     object = p2_af_filter$object_pos_temp.af,
-                     polarity = "positive",
-                     variable_id = p2_af_filter$pos_vari_id,
-                     database = temp_db.pos,
-                     show_mz = show_mz,
-                     show_detail = show_detail
-                   )
+        # plot
+        p2_af_filter$temp_ms2_match.pos = ms2_plot_mass_dataset_mz(
+          object = p2_af_filter$object_pos_temp.af,
+          polarity = "positive",
+          variable_id = p2_af_filter$pos_vari_id,
+          database = temp_db.pos,
+          show_mz = show_mz,
+          show_detail = show_detail
+        )
 
-                   ##> vis
+        # vis
+        output$pos_match_mz <- renderUI({
+          if (is.null(p2_af_filter$temp_ms2_match.pos)) { return() }
+          plot_type <- input$af_plt_format
 
-                   #> mv plot original neg
-                   output$pos_match_mz <- renderUI({
+          if (plot_type) {
+            plotlyOutput(outputId = ns("plotly_pos_match_mz"))
+          } else {
+            plotOutput(outputId = ns("plot_pos_match_mz"))
+          }
+        })
 
-                     if(is.null(p2_af_filter$temp_ms2_match.pos)){return()}
-                     plot_type <- input$af_plt_format
+        output$plot_pos_match_mz <- renderPlot({
+          if (is.null(p2_af_filter$temp_ms2_match.pos)) { return() }
+          p2_af_filter$temp_ms2_match.pos[[1]]
+        })
 
-                     if (plot_type) {
-                       plotlyOutput(outputId = ns("plotly_pos_match_mz"))
-                     } else {
-                       plotOutput(outputId = ns("plot_pos_match_mz"))
-                     }
+        output$plotly_pos_match_mz <- renderPlotly({
+          if (is.null(p2_af_filter$temp_ms2_match.pos)) { return() }
+          plotly::ggplotly(p2_af_filter$temp_ms2_match.pos[[1]])
+        })
+      }, error = function(e) {
+        message("Error occurred: ", e$message)
+      })
+    })
 
-                   })
 
-                   output$plot_pos_match_mz <- renderPlot({
-                     if(is.null(p2_af_filter$temp_ms2_match.pos)){return()}
-                     p2_af_filter$temp_ms2_match.pos[[1]]
-                   })
+    observeEvent(input$af_neg_show_plot, {
+      tryCatch({
+        if (is.null(p2_af_filter$object_neg_temp.af)) {
+          return()
+        }
+        if (is.null(p2_af_filter$neg_clean_anno)) {
+          return()
+        }
 
-                   output$plotly_pos_match_mz <- renderPlotly({
+        # plot neg
+        show_mz = input$show_mz
+        if (show_mz == "TRUE") { show_mz = TRUE } else { show_mz = FALSE }
+        show_detail = input$show_detail
+        if (show_detail == "TRUE") { show_detail = TRUE } else { show_detail = FALSE }
 
-                     if(is.null(p2_af_filter$temp_ms2_match.pos)){return()}
-                     plotly::ggplotly(p2_af_filter$temp_ms2_match.pos[[1]])
+        af_neg_row_idx = input$af_neg_ms2_tbl_rows_selected
+        af_neg_row = p2_af_filter$temp_af_neg_tbl[af_neg_row_idx, ]
+        p2_af_filter$neg_vari_id = af_neg_row[[1]]
+        p2_af_filter$neg_db_name = af_neg_row[[4]]
 
-                   })
-                 }
+        temp_idx.neg = match(p2_af_filter$neg_db_name, p2_af_filter$db.name)
+        temp_db.neg = p2_af_filter$dblist[[temp_idx.neg]]
 
-    )
+        p2_af_filter$temp_ms2_match.neg = ms2_plot_mass_dataset_mz(
+          object = p2_af_filter$object_neg_temp.af,
+          polarity = "negative",
+          variable_id = p2_af_filter$neg_vari_id,
+          database = temp_db.neg,
+          show_mz = show_mz,
+          show_detail = show_detail
+        )
 
-    observeEvent(input$af_neg_show_plot,
-                 {
-                   if(is.null(p2_af_filter$object_neg_temp.af)){return()}
-                   if(is.null(p2_af_filter$neg_clean_anno)){return()}
-                   #> plot neg
-                   ##>
-                   show_mz = input$show_mz
-                   if(show_mz == "TRUE") {show_mz = TRUE} else {show_mz = FALSE}
-                   show_detail = input$show_detail
-                   if(show_detail == "TRUE") {show_detail = TRUE} else {show_detail = FALSE}
+        # mv plot original neg
+        output$neg_match_mz <- renderUI({
+          plot_type <- input$af_plt_format
 
-                   af_neg_row_idx = input$af_neg_ms2_tbl_rows_selected
-                   af_neg_row = p2_af_filter$temp_af_neg_tbl[af_neg_row_idx,]
-                   p2_af_filter$neg_vari_id = af_neg_row[[1]]
-                   p2_af_filter$neg_db_name = af_neg_row[[4]]
+          if (plot_type) {
+            plotlyOutput(outputId = ns("plotly_neg_match_mz"))
+          } else {
+            plotOutput(outputId = ns("plot_neg_match_mz"))
+          }
+        })
 
-                   temp_idx.neg = match(p2_af_filter$neg_db_name,p2_af_filter$db.name)
-                   temp_db.neg = p2_af_filter$dblist[[temp_idx.neg]]
+        output$plot_neg_match_mz <- renderPlot({
+          if (is.null(p2_af_filter$temp_ms2_match.neg)) { return() }
+          p2_af_filter$temp_ms2_match.neg[[1]]
+        })
 
-                   p2_af_filter$temp_ms2_match.neg = ms2_plot_mass_dataset_mz(
-                     object = p2_af_filter$object_neg_temp.af,polarity = "negative",
-                     variable_id = p2_af_filter$neg_vari_id,
-                     database = temp_db.neg,
-                     show_mz = show_mz,
-                     show_detail = show_detail
-                   )
+        output$plotly_neg_match_mz <- renderPlotly({
+          if (is.null(p2_af_filter$temp_ms2_match.neg)) { return() }
+          plotly::ggplotly(p2_af_filter$temp_ms2_match.neg[[1]])
+        })
 
-                   #> mv plot original neg
-                   output$neg_match_mz <- renderUI({
-                     plot_type <- input$af_plt_format
+      }, error = function(e) {
+        message("Error occurred: ", e$message)
+      })
+    })
 
-                     if (plot_type) {
-                       plotlyOutput(outputId = ns("plotly_neg_match_mz"))
-                     } else {
-                       plotOutput(outputId = ns("plot_neg_match_mz"))
-                     }
-
-                   })
-
-                   output$plot_neg_match_mz <- renderPlot({
-
-                     if(is.null(p2_af_filter$temp_ms2_match.neg)){return()}
-                     p2_af_filter$temp_ms2_match.neg[[1]]
-
-                   })
-
-                   output$plotly_neg_match_mz <- renderPlotly({
-
-                     if(is.null(p2_af_filter$temp_ms2_match.neg)){return()}
-                     plotly::ggplotly(p2_af_filter$temp_ms2_match.neg[[1]])
-
-                   })
-                 }
-    )
   })
 }
 

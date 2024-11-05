@@ -146,7 +146,7 @@ data_class_server <- function(id,volumes,prj_init,data_clean_rv) {
           temp_anno_file = temp_class_anno()
         } else if(!is.null(prj_init$object_positive.init) & prj_init$steps == "DAM and rest"){
           p3_class$object_merge= prj_init$object_positive.init;
-        } else if (is.null(data_clean_rv$object_merge)) {
+        } else if (!is.null(data_clean_rv$object_merge)) {
           p3_class$object_merge = data_clean_rv$object_merge
         } else {return()}
 
@@ -158,6 +158,7 @@ data_class_server <- function(id,volumes,prj_init,data_clean_rv) {
           temp_upload_file = temp_anno_file %>% select(1:3) %>% setNames(c("variable_id","Compound.name","Lab.ID"))
         } else {
           temp_upload_file = p3_class$object_merge %>% extract_annotation_table() %>%
+            dplyr::filter(filter_tag_addcut == 'retain') %>%
             select(variable_id,Compound.name,Lab.ID)
         }
 
