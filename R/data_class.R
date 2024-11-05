@@ -53,6 +53,12 @@ data_class_ui <- function(id) {
                          inputId = ns('pie_cut'),
                          label = "other group size",
                          value = 10
+                       ),
+                       hr_head(),
+                       textInput(
+                         inputId = ns('pie_ntop'),
+                         label = "Show top x main groups",
+                         value = 15
                        )
           )# sidebarPanel
       ),# div
@@ -252,8 +258,9 @@ data_class_server <- function(id,volumes,prj_init,data_clean_rv) {
 
         temp_pie_tag = input$pie_tag %>% as.character()
         temp_pie_cut = input$pie_cut %>% as.numeric()
-        p3_class$plot_pie = pie_plot(x = p3_class$class_inner_clean,tag = temp_pie_tag,cut = temp_pie_cut)
-        p3_class$plotly_pie = pie_plot_plotly(x = p3_class$class_inner_clean,tag = temp_pie_tag,cut = temp_pie_cut)
+        temp_pie_ntop = input$pie_ntop %>% as.numeric()
+        p3_class$plot_pie = pie_plot(x = p3_class$class_inner_clean,tag = temp_pie_tag,cut = temp_pie_cut,ntop = temp_pie_ntop)
+        p3_class$plotly_pie = pie_plot_plotly(x = p3_class$class_inner_clean,tag = temp_pie_tag,cut = temp_pie_cut,ntop = temp_pie_ntop)
         output$class_pie_plot <- renderUI({
           plot_type <- input$class_plt_format
           if (plot_type) {

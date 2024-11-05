@@ -26,7 +26,8 @@ pie_plot <- function(x, tag='superclass',cut = 10,ntop = 15){
     anno_class %>%
     pivot_longer(!variable_id,names_to = 'levels',values_to = 'type') %>%
     drop_na() %>%
-    filter(type != "NA" | type != "") %>%
+    filter(type != "NA") %>%
+    filter(type != "") %>%
     arrange(levels)
 
   class_for_plot <-
@@ -46,11 +47,11 @@ pie_plot <- function(x, tag='superclass',cut = 10,ntop = 15){
     group_by(levels) %>%
     mutate(
       percentage = n / sum(n) * 100,
-      start_angle = cumsum(lag(percentage, default = 0)) / 100 * 2 * pi, # 顺时针起始角度
-      end_angle = cumsum(percentage) / 100 * 2 * pi,                     # 顺时针结束角度
-      angle = (start_angle + end_angle) / 2,                             # 扇区中心角度
-      ypos = 2.2 * cos(angle),                                           # 标签 x 坐标
-      xpos = 2.2 * sin(angle)                                            # 标签 y 坐标
+      start_angle = cumsum(lag(percentage, default = 0)) / 100 * 2 * pi,
+      end_angle = cumsum(percentage) / 100 * 2 * pi,
+      angle = (start_angle + end_angle) / 2,
+      ypos = 2.2 * cos(angle),
+      xpos = 2.2 * sin(angle)
     )
 
 
@@ -84,6 +85,7 @@ pie_plot <- function(x, tag='superclass',cut = 10,ntop = 15){
 #' @param x a MDAtoolkits classyfire result.
 #' @param tag level of classyfire superclass class subclass
 #' @param cut cut-off of small category
+#' @param ntop show to n category
 #' @importFrom dplyr select group_by summarise n case_when ungroup
 #' @importFrom tidyr drop_na
 #' @importFrom ggplot2 aes geom_bar coord_polar geom_text position_stack theme_void
@@ -94,25 +96,45 @@ pie_plot <- function(x, tag='superclass',cut = 10,ntop = 15){
 #' @export
 #'
 
-pie_plot_plotly <- function(x, tag, cut){
-  temp = x %>%
-    dplyr::select(tag) %>%
-    drop_na() %>%
-    setNames("key") %>%
-    group_by(key) %>%
-    summarise(n = n()) %>%
-    mutate(new_tag = case_when(
-      n < cut ~ 'other',
-      TRUE ~ key
-    )) %>%
-    ungroup() %>%
-    group_by(new_tag) %>%
-    summarise(sum = sum(n)) %>%
-    ungroup()
+pie_plot_plotly <- function(x, tag='superclass',cut = 10,ntop = 15){
+  anno_class <-
+    x %>%
+    select(variable_id,superclass,class,subclass,parent_levels) %>%
+    filter(superclass != "NA")
 
-  plot_ly(temp, labels = ~new_tag, values = ~sum, type = 'pie', textinfo = 'percent+value',
+  anno_class_long <-
+    anno_class %>%
+    pivot_longer(!variable_id,names_to = 'levels',values_to = 'type') %>%
+    drop_na() %>%
+    filter(type != "NA") %>%
+    filter(type != "") %>%
+    arrange(levels)
+
+  class_for_plot <-
+    anno_class_long %>%
+    group_by(levels, type) %>%
+    summarise(n = n()) %>%
+    arrange(desc(n)) %>%
+    mutate(type = case_when(
+      n <= cut ~ "Other",
+      row_number(desc(n)) >= ntop ~ "Other",
+      TRUE ~ type
+    )) %>%
+    group_by(levels, type) %>%
+    mutate(n = sum(n)) %>%
+    ungroup() %>%
+    distinct() %>%
+    group_by(levels)
+
+
+  plt_tbl = class_for_plot %>% filter(levels == tag) %>%
+    mutate(type = factor(type,levels = type)) %>%
+    mutate(percent = (n/sum(n))*100)
+
+  plot_ly(plt_tbl, labels = ~type, values = ~n, type = 'pie', textinfo = 'percent+value',
           textposition = 'inside', insidetextorientation = 'radial', hoverinfo = 'label+percent+value') %>%
     layout(title = paste('Pie Chart of', tag),
            xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
            yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
 }
