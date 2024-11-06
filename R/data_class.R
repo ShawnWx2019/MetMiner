@@ -95,6 +95,18 @@ data_class_ui <- function(id) {
               jqui_resizable(
                 uiOutput(ns("class_pie_plot"),fill = T)
               ),
+              textInput(inputId = ns("fig1_width"),
+                        label = "width",
+                        value = 10),
+              textInput(inputId = ns("fig1_height"),
+                        label = "height",
+                        value = 10),
+              selectInput(
+                inputId = ns("fig1_format"),label = "format",
+                choices = c("jpg","pdf","png","tiff"),
+                selected = "pdf",selectize = F
+              ),
+              downloadButton(ns("fig1_download"),"Download"),
             )
           )
         )
@@ -131,6 +143,17 @@ data_class_server <- function(id,volumes,prj_init,data_clean_rv) {
 
     observeEvent(input$toggleSidebar, {
       shinyjs::toggle(id = "Sidebar")
+    })
+
+    #> parameters
+    ##> download parameters ================
+    download_para = reactive({
+      list(
+        ##> fig1
+        fig1_width = as.numeric(input$fig1_width),
+        fig1_height = as.numeric(input$fig1_height),
+        fig1_format = as.character(input$fig1_format)
+      )
     })
 
     ### 3.6.9 classification ---------------------------------------------------------
@@ -280,7 +303,28 @@ data_class_server <- function(id,volumes,prj_init,data_clean_rv) {
           p3_class$plotly_pie
         })
       })
+    # download ----------------------------------------------------------------
+    ###> fig1 =====
+    output$fig1_download = downloadHandler(
+      filename = function() {
+        paste0("classyfire.", download_para()$fig1_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
 
+        # draw condition
+        p = p3_class$plot_pie
+        # save plot
+        ggsave(
+          filename = file,
+          plot = p,
+          width = para_d$fig1_width,
+          height = para_d$fig1_height,
+          device = para_d$fig1_format
+        )
+      }
+    )
   })
 }
 

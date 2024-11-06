@@ -14,6 +14,17 @@ get_volumes <- function() {
   }
 }
 
+#' load_depends
+#'
+#' load depends of metminer
+#' @export
+#' @noRd
+
+load_depends_metminer <- function() {
+  library(tidyverse)
+  library(tidymass)
+  library(MDAtoolkits)
+}
 
 #' Custom Horizontal Rule
 #'

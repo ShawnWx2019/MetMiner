@@ -193,14 +193,38 @@ dam_res_ui <- function(id) {
                        hr_head(),
                        jqui_resizable(
                          uiOutput(ns("dam_pca_score"),fill = T)
-                       )
+                       ),
+                       textInput(inputId = ns("fig1_width"),
+                                 label = "width",
+                                 value = 10),
+                       textInput(inputId = ns("fig1_height"),
+                                 label = "height",
+                                 value = 10),
+                       selectInput(
+                         inputId = ns("fig1_format"),label = "format",
+                         choices = c("jpg","pdf","png","tiff"),
+                         selected = "pdf",selectize = F
+                       ),
+                       downloadButton(ns("fig1_download"),"Download")
                 ),
                 column(width = 4,
                        tags$h4("Loading",style = 'color: #008080'),
                        hr_head(),
                        jqui_resizable(
                          uiOutput(ns("dam_pca_loading"),fill = T)
-                       )
+                       ),
+                       textInput(inputId = ns("fig2_width"),
+                                 label = "width",
+                                 value = 10),
+                       textInput(inputId = ns("fig2_height"),
+                                 label = "height",
+                                 value = 10),
+                       selectInput(
+                         inputId = ns("fig2_format"),label = "format",
+                         choices = c("jpg","pdf","png","tiff"),
+                         selected = "pdf",selectize = F
+                       ),
+                       downloadButton(ns("fig2_download"),"Download")
                 )
               ),
               tags$h3("PLS-DA (OPLS-DA)",style = 'color: #008080'),
@@ -216,7 +240,19 @@ dam_res_ui <- function(id) {
                        hr_head(),
                        jqui_resizable(
                          plotOutput(ns("opls_da_plt_auto"))
-                       )
+                       ),
+                       textInput(inputId = ns("fig3_width"),
+                                 label = "width",
+                                 value = 10),
+                       textInput(inputId = ns("fig3_height"),
+                                 label = "height",
+                                 value = 10),
+                       selectInput(
+                         inputId = ns("fig3_format"),label = "format",
+                         choices = c("jpg","pdf","png","tiff"),
+                         selected = "pdf",selectize = F
+                       ),
+                       downloadButton(ns("fig3_download"),"Download")
                        )
                 )
             ),
@@ -232,14 +268,40 @@ dam_res_ui <- function(id) {
                        hr_head(),
                        jqui_resizable(
                          uiOutput(ns("dam_voc_plot"),fill = T)
-                       )
+                       ),
+
+                       textInput(inputId = ns("fig4_width"),
+                                 label = "width",
+                                 value = 10),
+                       textInput(inputId = ns("fig4_height"),
+                                 label = "height",
+                                 value = 10),
+                       selectInput(
+                         inputId = ns("fig4_format"),label = "format",
+                         choices = c("jpg","pdf","png","tiff"),
+                         selected = "pdf",selectize = F
+                       ),
+                       downloadButton(ns("fig4_download"),"Download")
                 ),
                 column(width = 4,
                        tags$h4("boxplot",style = 'color: #008080'),
                        hr_head(),
                        jqui_resizable(
                          plotOutput(ns("dam_barplot"))
-                       )
+                       ),
+
+                       textInput(inputId = ns("fig5_width"),
+                                 label = "width",
+                                 value = 10),
+                       textInput(inputId = ns("fig5_height"),
+                                 label = "height",
+                                 value = 10),
+                       selectInput(
+                         inputId = ns("fig5_format"),label = "format",
+                         choices = c("jpg","pdf","png","tiff"),
+                         selected = "pdf",selectize = F
+                       ),
+                       downloadButton(ns("fig5_download"),"Download")
                 )
               ),
               tags$h3("Details",style = 'color: #008080'),
@@ -308,6 +370,33 @@ dam_res_server <- function(id,volumes,prj_init,data_clean_rv,data_download) {
     })
 
     p3_DAM <- reactiveValues(data = NULL)
+
+    #> parameters
+    ##> download parameters ================
+    download_para = reactive({
+      list(
+        ##> fig1
+        fig1_width = as.numeric(input$fig1_width),
+        fig1_height = as.numeric(input$fig1_height),
+        fig1_format = as.character(input$fig1_format),
+        ##> fig2
+        fig2_width = as.numeric(input$fig2_width),
+        fig2_height = as.numeric(input$fig2_height),
+        fig2_format = as.character(input$fig2_format),
+        ##> fig3
+        fig3_width = as.numeric(input$fig3_width),
+        fig3_height = as.numeric(input$fig3_height),
+        fig3_format = as.character(input$fig3_format),
+        ##> fig4
+        fig4_width = as.numeric(input$fig4_width),
+        fig4_height = as.numeric(input$fig4_height),
+        fig4_format = as.character(input$fig4_format),
+        ##> fig5
+        fig5_width = as.numeric(input$fig5_width),
+        fig5_height = as.numeric(input$fig5_height),
+        fig5_format = as.character(input$fig5_format)
+      )
+    })
 
     observeEvent(
       input$dam_initialize,
@@ -709,8 +798,9 @@ dam_res_server <- function(id,volumes,prj_init,data_clean_rv,data_download) {
         if (is.null(d)) "Hover on a point!" else d
         tbl = p3_DAM$expmat_long %>% filter(variable_id == d)
         if(p3_DAM$dam_method1 == "t-test") {temp_type = "parametric"} else {temp_type = "nonparametric"}
-        ggbetweenstats(tbl,group,value,p.adjust.method = p3_DAM$dam_method3,temp_type = "parametric",paired = p3_DAM$dam_paired,
+        p3_DAM$boxplot = ggbetweenstats(tbl,group,value,p.adjust.method = p3_DAM$dam_method3,temp_type = "parametric",paired = p3_DAM$dam_paired,
                        title = d)
+        p3_DAM$boxplot
       })
 
       output$dam_anno_data <- renderPrint({
@@ -783,6 +873,130 @@ dam_res_server <- function(id,volumes,prj_init,data_clean_rv,data_download) {
       })
 
     })
+    # download ----------------------------------------------------------------
+    ###> fig1 =====
+    output$fig1_download = downloadHandler(
+      filename = function() {
+        paste0(p3_DAM$dam_left_name,"_vs_",p3_DAM$dam_right_name,"PCA_score.", download_para()$fig1_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
+
+        # draw condition
+        p = p3_DAM$temp_biplot
+        # save plot
+        ggsave(
+          filename = file,
+          plot = p,
+          width = para_d$fig1_width,
+          height = para_d$fig1_height,
+          device = para_d$fig1_format,limitsize = FALSE
+        )
+      }
+    )
+    ###> fig2 ====
+    output$fig2_download = downloadHandler(
+      filename = function() {
+        paste0(p3_DAM$dam_left_name,"_vs_",p3_DAM$dam_right_name,"PCA_loading.", download_para()$fig2_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
+
+        # draw condition
+        p = p3_DAM$temp_loading_plot
+
+        # save plot
+
+        ggsave(
+          filename = file,
+          plot = p,
+          width = para_d$fig2_width,
+          height = para_d$fig2_height,
+          device = para_d$fig2_format,limitsize = FALSE
+        )
+      }
+    )
+    ###> fig3 ====
+    output$fig3_download = downloadHandler(
+      filename = function() {
+        paste0(p3_DAM$dam_left_name,"_vs_",p3_DAM$dam_right_name,"OPLS-DA.", download_para()$fig3_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
+
+        # save plot
+        if(para_d$fig2_format == "pdf"){
+          pdf(file = file,width = para_d$fi3_width,para_d$fig3_height)
+          ropls::plot(p3_DAM$oplsda)
+          dev.off()
+        } else if(para_d$fig2_format == "tiff") {
+          tiff(filename = file,width = para_d$fi3_width,height = para_d$fig3_height,res = 300,units = 'in')
+          ropls::plot(p3_DAM$oplsda)
+          dev.off()
+        } else if(para_d$fig2_format == "png") {
+          png(filename = file,width = para_d$fi3_width,height = para_d$fig3_height,res = 300,units = 'in',)
+          ropls::plot(p3_DAM$oplsda)
+          dev.off()
+        } else if(para_d$fig2_format == "jpg") {
+          grDevices::jpeg(filename = file,width = para_d$fi3_width,height = para_d$fig3_height,quality = 300,units = 'in')
+          ropls::plot(p3_DAM$oplsda)
+          dev.off()
+        }
+
+      }
+    )
+    ###> fig4 ====
+    output$fig4_download = downloadHandler(
+      filename = function() {
+        paste0(p3_DAM$dam_left_name,"_vs_",p3_DAM$dam_right_name,"Volcano.", download_para()$fig4_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
+
+        # save plot
+        p = MDAtoolkits::DAM_volcano(
+          x = p3_DAM$res_tbl_all,
+          title = paste0(p3_DAM$dam_left_name,"_vs_",p3_DAM$dam_right_name),
+          pval_cut = p3_DAM$dam_pvalue,
+          log2fc_cut = p3_DAM$dam_log2fc,
+          qval_cut = p3_DAM$dam_qvalue,
+          VIP_cut = p3_DAM$dam_VIP
+        )
+        # save plot
+        ggsave(
+          filename = file,
+          plot = p,
+          width = para_d$fig4_width,
+          height = para_d$fig4_height,
+          device = para_d$fig4_format
+        )
+      }
+    )
+    ###> fig5 ====
+    output$fig5_download = downloadHandler(
+      filename = function() {
+        paste0("variable_boxplot.", download_para()$fig5_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
+
+        # save plot
+        p = p3_DAM$boxplot
+        # save plot
+        ggsave(
+          filename = file,
+          plot = p,
+          width = para_d$fig5_width,
+          height = para_d$fig5_height,
+          device = para_d$fig5_format
+        )
+      }
+    )
 
   })
 }

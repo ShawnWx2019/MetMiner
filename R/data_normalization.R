@@ -438,6 +438,7 @@ data_normalize_server <- function(id,volumes,prj_init,data_clean_rv) {
         if(is.null(p2_norm$object_neg.norm)) {return()}
         p2_norm$temp_norm_pca_col_by = input$pca_col_by %>% as.character()
         #> mv plot original pos
+
         output$pca.pos_plt <- renderUI({
           plot_type <- input$norm_plt_format
           if (plot_type) {

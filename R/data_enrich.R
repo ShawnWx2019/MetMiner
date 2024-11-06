@@ -125,7 +125,19 @@ data_enrich_ui <- function(id) {
               hr_main(),
               jqui_resizable(
                 uiOutput(ns("enrich_plot"),fill = T)
-              )
+              ),
+              textInput(inputId = ns("fig1_width"),
+                        label = "width",
+                        value = 10),
+              textInput(inputId = ns("fig1_height"),
+                        label = "height",
+                        value = 10),
+              selectInput(
+                inputId = ns("fig1_format"),label = "format",
+                choices = c("jpg","pdf","png","tiff"),
+                selected = "pdf",selectize = F
+              ),
+              downloadButton(ns("fig1_download"),"Download")
             )
           )
         )
@@ -169,6 +181,17 @@ data_enrich_server <- function(id,volumes,prj_init,data_clean_rv) {
     #> variable table
     p3_enrich <- reactiveValues(data = NULL)
 
+    #> parameters
+    ##> download parameters ================
+    download_para = reactive({
+      list(
+        ##> fig1
+        fig1_width = as.numeric(input$fig1_width),
+        fig1_height = as.numeric(input$fig1_height),
+        fig1_format = as.character(input$fig1_format)
+      )
+    })
+
     temp_enrich_anno <- reactive({
       file1 <- input$enrich_annotation_file
       if(is.null(file1)){return()}
@@ -185,12 +208,12 @@ data_enrich_server <- function(id,volumes,prj_init,data_clean_rv) {
         if (!is.null(temp_enrich_anno())) {
           temp_anno_file = temp_enrich_anno()
         } else if(!is.null(prj_init$object_positive.init) & prj_init$steps == "DAM and rest"){
-          p3_class$object_merge= prj_init$object_positive.init %>%
+          p3_enrich$object_merge= prj_init$object_positive.init %>%
             activate_mass_dataset('sample_info') %>%
             dplyr::select('sample_id') %>%
             dplyr::left_join(prj_init$sample_info)
-        } else if (is.null(data_clean_rv$object_merge)) {
-          p3_class$object_merge = data_clean_rv$object_merge
+        } else if (!is.null(data_clean_rv$object_merge)) {
+          p3_enrich$object_merge = data_clean_rv$object_merge
         } else {return()}
 
         ## para
@@ -200,7 +223,7 @@ data_enrich_server <- function(id,volumes,prj_init,data_clean_rv) {
         if(temp_method == "from new upload annotation file") {
           temp_upload_file = temp_anno_file
         } else {
-          temp_upload_file = p3_class$object_merge %>% extract_annotation_table()
+          temp_upload_file = p3_enrich$object_merge %>% extract_annotation_table()
         }
 
         if("KEGG.ID"%in%colnames(temp_upload_file) & "superclass"%in%colnames(temp_upload_file)) {
@@ -358,6 +381,33 @@ data_enrich_server <- function(id,volumes,prj_init,data_clean_rv) {
             ggplotly(dotplot(p3_enrich$res, showCategory=p3_enrich$enrich_num))
           }
         })
+      }
+    )
+
+    # download ----------------------------------------------------------------
+    ###> fig1 =====
+    output$fig1_download = downloadHandler(
+      filename = function() {
+        paste0("Enrichment.", download_para()$fig1_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
+
+        # draw condition
+        if(p3_enrich$enrich_plot_type == "bar") {
+         p =  barplot(p3_enrich$res, showCategory=p3_enrich$enrich_num)
+        } else {
+         p =  dotplot(p3_enrich$res, showCategory=p3_enrich$enrich_num)
+        }
+        # save plot
+        ggsave(
+          filename = file,
+          plot = p,
+          width = para_d$fig1_width,
+          height = para_d$fig1_height,
+          device = para_d$fig1_format
+        )
       }
     )
 

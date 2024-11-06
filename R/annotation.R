@@ -222,6 +222,7 @@ annotation_server <- function(id,volumes,prj_init,data_clean_rv) {
     observeEvent(input$toggleSidebar, {
       shinyjs::toggle(id = "Sidebar")
     })
+
     #> parameters - for compound annotation parameters.
     observeEvent(input$para_select2,{
       shinyjs::runjs(sprintf("toggleParameters('%s')", ns("parameters2")))
@@ -229,10 +230,14 @@ annotation_server <- function(id,volumes,prj_init,data_clean_rv) {
 
     p2_anno <- reactiveValues(data = NULL)
 
+
+
     #> MS database dir
     observe({
       shinyDirChoose(input = input,
-                     id = "norm_customized_db", roots =  volumes, session = session)
+                     id = "norm_customized_db",
+                     roots =  volumes,
+                     session = session)
       if(!is.null(input$norm_customized_db)){
         # browser()
         ms_db_folder_selected<-parseDirPath(roots = volumes, input$norm_customized_db)

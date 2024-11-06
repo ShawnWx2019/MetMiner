@@ -124,14 +124,18 @@ annotation_filter_ui <- function(id) {
                          uiOutput(ns("pos_match_mz"))
                        )
                 ),
-                textInput(inputId = ns("width4.8.1"),
+                textInput(inputId = ns("fig1_width"),
                           label = "width",
                           value = 10),
-                textInput(inputId = ns("height4.8.1"),
+                textInput(inputId = ns("fig1_height"),
                           label = "height",
                           value = 10),
-                actionButton(ns("adjust4.8.1"),"Set fig size"),
-                downloadButton(ns("downfig4.8.1"),"Download"),
+                selectInput(
+                  inputId = ns("fig1_format"),label = "format",
+                  choices = c("jpg","pdf","png","tiff"),
+                  selected = "pdf",selectize = F
+                ),
+                downloadButton(ns("fig1_download"),"Download"),
               )
             ),
             tabPanel(
@@ -155,14 +159,18 @@ annotation_filter_ui <- function(id) {
                        jqui_resizable(
                          uiOutput(ns("neg_match_mz"))
                        ),
-                       textInput(inputId = ns("width4.8.2"),
+                       textInput(inputId = ns("fig2_width"),
                                  label = "width",
                                  value = 10),
-                       textInput(inputId = ns("height4.8.2"),
+                       textInput(inputId = ns("fig2_height"),
                                  label = "height",
                                  value = 10),
-                       actionButton(ns("adjust4.8.2"),"Set fig size"),
-                       downloadButton(ns("downfig4.8.2"),"Download")
+                       selectInput(
+                         inputId = ns("fig2_format"),label = "format",
+                         choices = c("jpg","pdf","png","tiff"),
+                         selected = "pdf",selectize = F
+                       ),
+                       downloadButton(ns("fig2_download"),"Download")
                 )
               )
             )
@@ -203,6 +211,21 @@ annotation_filter_server <- function(id,volumes,prj_init,data_clean_rv,data_down
     })
 
     ns <- session$ns
+
+    #> parameters
+    ##> download parameters ================
+    download_para = reactive({
+      list(
+        ##> fig1
+        fig1_width = as.numeric(input$fig1_width),
+        fig1_height = as.numeric(input$fig1_height),
+        fig1_format = as.character(input$fig1_format),
+        ##> fig2
+        fig2_width = as.numeric(input$fig2_width),
+        fig2_height = as.numeric(input$fig2_height),
+        fig2_format = as.character(input$fig2_format)
+      )
+    })
 
     ### 3.6.7 Annotation filtering-----------------------------------------------------
 
@@ -579,6 +602,52 @@ annotation_filter_server <- function(id,volumes,prj_init,data_clean_rv,data_down
         message("Error occurred: ", e$message)
       })
     })
+
+    # download ----------------------------------------------------------------
+    ###> fig1 =====
+    output$fig1_download = downloadHandler(
+      filename = function() {
+        paste0(p2_af_filter$pos_vari_id,"_ms_ms_mirror_plot.", download_para()$fig1_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
+
+        # draw condition
+        p = p2_af_filter$temp_ms2_match.pos[[1]]
+        # save plot
+        ggsave(
+          filename = file,
+          plot = p,
+          width = para_d$fig1_width,
+          height = para_d$fig1_height,
+          device = para_d$fig1_format
+        )
+      }
+    )
+    ###> fig2 ====
+    output$fig2_download = downloadHandler(
+      filename = function() {
+        paste0(p2_af_filter$neg_vari_id,"_ms_ms_mirror_plot.", download_para()$fig2_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
+
+        # draw condition
+        p = p2_af_filter$temp_ms2_match.neg
+
+        # save plot
+
+        ggsave(
+          filename = file,
+          plot = p,
+          width = para_d$fig2_width,
+          height = para_d$fig2_height,
+          device = para_d$fig2_format
+        )
+      }
+    )
 
   })
 }

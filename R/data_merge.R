@@ -72,14 +72,18 @@ data_merge_ui <- function(id) {
                 uiOutput(ns("merge_pca"),fill = T)
               ),
               hr_head(),
-              textInput(inputId = ns("width4.9.1"),
+              textInput(inputId = ns("fig1_width"),
                         label = "width",
                         value = 10),
-              textInput(inputId = ns("height4.9.1"),
+              textInput(inputId = ns("fig1_height"),
                         label = "height",
                         value = 10),
-              actionButton(ns("adjust4.9.1"),"Set fig size"),
-              downloadButton(ns("downfig4.9.1"),"Download"),
+              selectInput(
+                inputId = ns("fig1_format"),label = "format",
+                choices = c("jpg","pdf","png","tiff"),
+                selected = "pdf",selectize = F
+              ),
+              downloadButton(ns("fig1_download"),"Download"),
               tags$h3("Correlation",style = 'color: #008080'),
               hr_main(),
               fluidRow(
@@ -142,6 +146,18 @@ data_merge_ui <- function(id) {
               jqui_resizable(
                 plotOutput(ns("merge_corr"))
               ),
+              textInput(inputId = ns("fig2_width"),
+                        label = "width",
+                        value = 10),
+              textInput(inputId = ns("fig2_height"),
+                        label = "height",
+                        value = 10),
+              selectInput(
+                inputId = ns("fig2_format"),label = "format",
+                choices = c("jpg","pdf","png","tiff"),
+                selected = "pdf",selectize = F
+              ),
+              downloadButton(ns("fig2_download"),"Download")
             )
           )
         )
@@ -165,6 +181,7 @@ data_merge_ui <- function(id) {
 #' @importFrom ComplexHeatmap Heatmap HeatmapAnnotation draw
 #' @importFrom circlize colorRamp2
 #' @importFrom stringr str_split
+#' @importFrom grDevices jpeg
 #' @import MDAtoolkits
 #' @param id module of server
 #' @param volumes shinyFiles volumes
@@ -182,6 +199,21 @@ data_merge_server <- function(id,volumes,prj_init,data_clean_rv) {
       shinyjs::toggle(id = "Sidebar")
     })
     p2_data_merge <- reactiveValues(data = NULL)
+
+    #> parameters
+    ##> download parameters ================
+    download_para = reactive({
+      list(
+        ##> fig1
+        fig1_width = as.numeric(input$fig1_width),
+        fig1_height = as.numeric(input$fig1_height),
+        fig1_format = as.character(input$fig1_format),
+        ##> fig2
+        fig2_width = as.numeric(input$fig2_width),
+        fig2_height = as.numeric(input$fig2_height),
+        fig2_format = as.character(input$fig2_format)
+      )
+    })
 
     observeEvent(
       input$data_merge_show,
@@ -361,13 +393,13 @@ data_merge_server <- function(id,volumes,prj_init,data_clean_rv) {
         temp_lab_key = input$merge_anno_key %>% as.character()
         temp_lab_color = input$merge_anno_color %>% as.character() %>%
           stringr::str_split(pattern  = "\\\n|,| ",n = Inf,simplify = T) %>% unlist()
-        print(temp_lab_color)
+
         ##> cor mat
         temp_cor = cor(p2_data_merge$expmat %>% column_to_rownames("variable_id"))
 
         ##> generate heatmap
         if(is.null(temp_lab_key)){
-          ht_cor = ComplexHeatmap::Heatmap(
+          p2_data_merge$ht_cor = ComplexHeatmap::Heatmap(
             matrix = temp_cor,col = col_fun,name = "r",border = T,show_row_names = temp_show_name,show_column_names = temp_show_name,
             cluster_rows = temp_cluster,cluster_columns = temp_cluster
           )
@@ -509,6 +541,65 @@ data_merge_server <- function(id,volumes,prj_init,data_clean_rv) {
                    })
 
     })
+
+
+    # download ----------------------------------------------------------------
+    ###> fig1 =====
+    output$fig1_download = downloadHandler(
+      filename = function() {
+        paste0("final_pca.", download_para()$fig1_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
+
+        # draw condition
+        p = pca_plot(
+          object = p2_data_merge$object_merge,
+          colby = input$merge_colorby %>% as.character(),
+          center = T,
+          scale = T,
+          removeVar = .1,interactive = F
+        )
+        # save plot
+        ggsave(
+          filename = file,
+          plot = p,
+          width = para_d$fig1_width,
+          height = para_d$fig1_height,
+          device = para_d$fig1_format
+        )
+      }
+    )
+    ###> fig2 ====
+    output$fig2_download = downloadHandler(
+      filename = function() {
+        paste0("sample_corr.", download_para()$fig2_format)
+      },
+      content = function(file) {
+        # extract parameters
+        para_d <- download_para()
+
+        # save plot
+        if(para_d$fig2_format == "pdf"){
+          pdf(file = file,width = para_d$fi2_width,para_d$fig2_height)
+          draw(p2_data_merge$ht_cor)
+          dev.off()
+        } else if(para_d$fig2_format == "tiff") {
+          tiff(filename = file,width = para_d$fi2_width,height = para_d$fig2_height,res = 300,units = 'in')
+          draw(p2_data_merge$ht_cor)
+          dev.off()
+        } else if(para_d$fig2_format == "png") {
+          png(filename = file,width = para_d$fi2_width,height = para_d$fig2_height,res = 300,units = 'in',)
+          draw(p2_data_merge$ht_cor)
+          dev.off()
+        } else if(para_d$fig2_format == "jpg") {
+          grDevices::jpeg(filename = file,width = para_d$fi2_width,height = para_d$fig2_height,quality = 300,units = 'in')
+          draw(p2_data_merge$ht_cor)
+          dev.off()
+        }
+      }
+    )
 
   })
 }
