@@ -14,7 +14,7 @@ app_ui <- function(request) {
     # Your application UI logic
     navbarPage(
       theme = shinytheme('spacelab'),
-      customLogo(version = "V.1.0.0"),
+      customLogo(version = "V.1.0.1"),
       homepage_ui("home_id"),
       project_init_ui("project_init_id"),
       navbarMenu(

@@ -1,11 +1,8 @@
 default:
   golem_name: MetMiner
-  golem_version: 0.0.0.9000
+  golem_version: 1.0.1
   app_prod: no
-
 production:
   app_prod: yes
-
 dev:
   golem_wd: !expr golem::pkg_path()
-
