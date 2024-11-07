@@ -733,7 +733,7 @@ dam_res_server <- function(id,volumes,prj_init,data_clean_rv,data_download) {
 
 
       temp_loading_plot = PCAtools::plotloadings(temp_pca)
-      p3_DAM$temp_loading_plot = temp_biplot
+      p3_DAM$temp_loading_plot = temp_loading_plot
 
       output$dam_pca_loading <- renderUI({
         plot_type <- input$dam_plt_format
