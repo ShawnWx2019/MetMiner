@@ -698,12 +698,14 @@ dam_res_server <- function(id,volumes,prj_init,data_clean_rv,data_download) {
         removeVar = .1
       )
 
+
       ##> PCA biplot
       temp_biplot = PCAtools::biplot(
         pcaobj = temp_pca,
         colby = dam_pca_col_by,legendPosition = "top",
         showLoadings = dam_showloading
       )
+      p3_DAM$temp_biplot = temp_biplot
 
 
       output$dam_pca_score <- renderUI({
@@ -731,6 +733,7 @@ dam_res_server <- function(id,volumes,prj_init,data_clean_rv,data_download) {
 
 
       temp_loading_plot = PCAtools::plotloadings(temp_pca)
+      p3_DAM$temp_loading_plot = temp_biplot
 
       output$dam_pca_loading <- renderUI({
         plot_type <- input$dam_plt_format
